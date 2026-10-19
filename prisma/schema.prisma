@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum PaymentMethod {
+  STRIPE
+  COD
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT // Stripe checkout started, not yet paid
+  PAID            // Stripe payment confirmed
+  COD_PENDING     // Cash on delivery order placed, awaiting dispatch
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+model Order {
+  id              String        @id @default(cuid())
+  orderNumber     String        @unique
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  paymentMethod   PaymentMethod
+  status          OrderStatus
+  stripeSessionId String?       @unique
+  paidAt          DateTime?
+
+  customerName    String
+  email           String
+  phone           String
+  addressLine1    String
+  addressLine2    String?
+  city            String
+  region          String
+  postalCode      String
+  country         String
+  notes           String?
+
+  currency        String        @default("usd")
+  subtotalCents   Int
+  shippingCents   Int
+  codFeeCents     Int           @default(0)
+  totalCents      Int
+
+  items           OrderItem[]
+
+  @@index([createdAt])
+  @@index([status])
+}
+
+model OrderItem {
+  id             String @id @default(cuid())
+  orderId        String
+  order          Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productSlug    String
+  purchaseCode   String
+  title          String
+  image          String
+  unitPriceCents Int
+  quantity       Int
+}
+
+// Messages left through the chat assistant ("leave us a message"),
+// replacing the Wix Chat inbox.
+model Enquiry {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  name      String
+  email     String
+  message   String
+  page      String?
+  handled   Boolean  @default(false)
+
+  @@index([createdAt])
+}

@@ -1,0 +1,89 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --header-h: 64px;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-shankh font-body text-ink antialiased;
+    /* keep content clear of the iPhone home bar when installed as an app */
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  h1,
+  h2,
+  h3 {
+    @apply font-display text-maroon;
+    letter-spacing: 0.01em;
+  }
+  ::selection {
+    @apply bg-haldi-light text-maroon-deep;
+  }
+  :focus-visible {
+    outline: 2px solid #e3a21a;
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Pattachitra-style border band: alternating temple triangles and dots,
+     the decorative frame painted around traditional patta works. */
+  .patta-band {
+    height: 14px;
+    background-color: #5a1414;
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='14'%3E%3Cpath d='M0 14 L7 2 L14 14Z' fill='%23E3A21A'/%3E%3Ccircle cx='21' cy='8' r='2.4' fill='%23FBF4E6'/%3E%3C/svg%3E");
+    background-repeat: repeat-x;
+    background-size: 28px 14px;
+  }
+  .patta-band-thin {
+    height: 6px;
+    background: repeating-linear-gradient(90deg, #b5261e 0 10px, #e3a21a 10px 14px, #5a1414 14px 24px, #e3a21a 24px 28px);
+  }
+  .eyebrow {
+    @apply font-body text-xs font-bold uppercase tracking-[0.28em] text-sindoor;
+  }
+  .btn {
+    @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full px-6 text-sm font-bold tracking-wide transition active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn bg-sindoor text-shankh hover:bg-sindoor-dark;
+  }
+  .btn-outline {
+    @apply btn border-2 border-maroon text-maroon hover:bg-maroon hover:text-shankh;
+  }
+  .btn-gold {
+    @apply btn bg-haldi text-maroon-deep hover:bg-haldi-light;
+  }
+  .card {
+    @apply rounded-2xl bg-white shadow-card;
+  }
+  .field {
+    @apply block w-full rounded-xl border border-ink/15 bg-white px-4 py-3 text-base text-ink placeholder:text-ink/40 focus:border-haldi focus:outline-none focus:ring-2 focus:ring-haldi/40;
+  }
+  .label {
+    @apply mb-1.5 block text-sm font-semibold text-ink-soft;
+  }
+  .prose-kk p {
+    @apply mb-5 leading-relaxed text-ink-soft;
+  }
+  .container-kk {
+    @apply mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
