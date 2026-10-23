@@ -1,4 +1,6 @@
 import type { Metadata, Viewport } from "next";
+import { Cormorant_Garamond, Mulish } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
 import Header from "@/components/Header";
@@ -9,9 +11,36 @@ import ChatWidget from "@/components/ChatWidget";
 import PWARegister from "@/components/PWARegister";
 import { site } from "@/lib/site";
 
+const display = Cormorant_Garamond({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  style: ["normal", "italic"],
+  variable: "--font-display",
+  display: "swap",
+});
+const body = Mulish({
+  subsets: ["latin"],
+  weight: ["400", "600", "700", "800"],
+  variable: "--font-body",
+  display: "swap",
+});
+
+const orgJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: site.name,
+  description: site.description,
+  url: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+  areaServed: ["US", "CA"],
+  address: { "@type": "PostalAddress", addressLocality: "Minneapolis", addressRegion: "MN", addressCountry: "US" },
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
-  title: { default: `HOME | ${site.name}`, template: `%s | ${site.name}` },
+  title: {
+    default: `${site.name} | Authentic Indian Pattachitra Art & Krsna Leelas — Ships to USA & Canada`,
+    template: `%s | ${site.name}`,
+  },
   description: site.description,
   applicationName: site.name,
   manifest: "/manifest.webmanifest",
@@ -36,16 +65,10 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${display.variable} ${body.variable}`}>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link rel="preconnect" href="https://static.wixstatic.com" />
-        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Mulish:wght@400;600;700;800&display=swap"
-        />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }} />
       </head>
       <body className="flex min-h-dvh flex-col" suppressHydrationWarning>
         <CartProvider>
@@ -62,6 +85,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ChatWidget />
           <PWARegister />
         </CartProvider>
+        <Analytics />
       </body>
     </html>
   );

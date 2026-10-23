@@ -38,8 +38,26 @@ export default async function ProductPage({ params }: Params) {
   const related = priced.filter((x) => x.slug !== p.slug && x.category === p.category).slice(0, 3);
   const more = related.length ? related : priced.filter((x) => x.slug !== p.slug).slice(0, 3);
 
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: p.title,
+    description: p.description,
+    sku: p.purchaseCode,
+    category: p.category,
+    image: siteUrl() + p.image,
+    offers: {
+      "@type": "Offer",
+      priceCurrency: commerce.currency.toUpperCase(),
+      price: (p.priceCents / 100).toFixed(2),
+      availability: p.available ? "https://schema.org/InStock" : "https://schema.org/SoldOut",
+      areaServed: commerce.shipCountries.map((c) => c.code),
+    },
+  };
+
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }} />
       <div className="container-kk py-8 sm:py-14">
         <nav aria-label="Breadcrumb" className="mb-6 text-sm text-ink-soft">
           <Link href="/shop" className="hover:text-sindoor">
