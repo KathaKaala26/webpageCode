@@ -115,8 +115,9 @@ marked paid even if the webhook is delayed.)
 
 `.github/workflows/deploy.yml` deploys to Vercel production on every push to
 `main`, using the Vercel CLI rather than Vercel's GitHub App integration (the
-app couldn't be authorized for this GitHub org). It needs three **GitHub
-repository secrets** (repo → Settings → Secrets and variables → Actions):
+app couldn't be authorized for this GitHub org). ✅ Configured and active — it
+needs three **GitHub repository secrets** (repo → Settings → Secrets and
+variables → Actions):
 
 | Secret | Value |
 |---|---|
