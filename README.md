@@ -125,10 +125,14 @@ variables → Actions):
 | `VERCEL_ORG_ID` | `team_E5pZ4616fGUPJGc9IZqAA63x` |
 | `VERCEL_PROJECT_ID` | `prj_bQSAyrwDPt2GYfhCAAweNrqgcFoO` |
 
-The workflow pulls all other env vars (DB, Stripe, Supabase, etc.) straight
-from the linked Vercel project via `vercel pull` — nothing else needs
-duplicating as a GitHub secret. Without these secrets set, the Action will
-fail; `vercel --prod` from a local/CLI session still works as a manual fallback.
+The workflow triggers a **remote** build on Vercel's own infrastructure
+(`vercel deploy --prod`), the same as a manual `vercel --prod` — it does not
+pull env vars or build locally in the runner, since `vercel pull`/`vercel env
+pull` has been returning empty placeholder values for this project rather
+than the real decrypted env vars (a CLI/account quirk, not a secrets
+misconfiguration — Vercel's own remote builds inject the real values fine).
+Without the 3 secrets set, the Action will fail; `vercel --prod` from a
+local/CLI session still works as a manual fallback.
 
 ### Analytics & SEO
 
