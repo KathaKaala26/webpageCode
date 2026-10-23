@@ -56,6 +56,17 @@ export const DownloadIcon = ({ className = "h-5 w-5" }: P) => (
     <path d="M12 4v11m0 0 4-4m-4 4-4-4M5 20h14" />
   </svg>
 );
+export const MailIcon = ({ className = "h-5 w-5" }: P) => (
+  <svg viewBox="0 0 24 24" className={className} {...base} aria-hidden>
+    <rect x="3" y="5" width="18" height="14" rx="2" />
+    <path d="m4 7 8 6 8-6" />
+  </svg>
+);
+export const PhoneIcon = ({ className = "h-5 w-5" }: P) => (
+  <svg viewBox="0 0 24 24" className={className} {...base} aria-hidden>
+    <path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2Z" />
+  </svg>
+);
 
 /** KK monogram — the logo mark from the original site, set in a lotus-petal frame. */
 export const KKMark = ({ className = "h-10 w-10" }: P) => (

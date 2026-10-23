@@ -11,7 +11,7 @@ export const site = {
   location: {
     address: "Minneapolis, MN, USA",
     hours: "",
-    phone: "",
+    phone: "(817) 666-5006",
     email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || "",
   } as { address: string; hours: string; phone: string; email: string },
   whatsapp: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "",
@@ -43,4 +43,5 @@ export const nav = [
   { href: "/pattachitra", label: "Pattachitra" },
   { href: "/books", label: "Books" },
   { href: "/shop", label: "Shop" },
+  { href: "/contact", label: "Contact" },
 ] as const;

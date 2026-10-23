@@ -6,6 +6,7 @@ import { useCart } from "@/context/CartContext";
 import { formatMoney, shippingFor } from "@/lib/format";
 import { QtyStepper } from "@/components/CartDrawer";
 import { TrashIcon } from "@/components/Icons";
+import PaymentNotice from "@/components/PaymentNotice";
 
 export default function CartPage() {
   const { lines, subtotalCents, remove, ready } = useCart();
@@ -14,6 +15,10 @@ export default function CartPage() {
   return (
     <section className="container-kk py-12 sm:py-16">
       <h1 className="text-4xl font-semibold sm:text-5xl">Your Cart</h1>
+
+      <div className="mt-6">
+        <PaymentNotice />
+      </div>
 
       {!ready ? (
         <div className="mt-10 h-40 animate-pulse rounded-2xl bg-white" />
