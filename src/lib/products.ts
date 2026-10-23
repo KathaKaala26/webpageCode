@@ -46,7 +46,7 @@ const COLORFUL =
 const ROOM =
   "These paintings starkly contrast and grab anyone's attention when they meet in a room, making them perfect for any event or to simply decorate your room or house!";
 
-export const products: Product[] = [
+const rawProducts: Product[] = [
   {
     slug: "krsna-leelas",
     purchaseCode: "KK-201",
@@ -225,6 +225,17 @@ export const products: Product[] = [
     available: true,
   },
 ];
+
+// Public-facing catalogue: every image is swapped for a stable `/img/{slug}`
+// path. That route resolves to an admin-uploaded replacement if one exists
+// in the database, falling back to the original image below otherwise —
+// so admins can swap artwork photos from /admin without a code change.
+export const products: Product[] = rawProducts.map((p) => ({ ...p, image: `/img/${p.slug}` }));
+
+/** The original (non-overridable) image for a product, by slug. */
+export function defaultProductImage(slug: string): string | undefined {
+  return rawProducts.find((p) => p.slug === slug)?.image;
+}
 
 export const categories = Array.from(new Set(products.map((p) => p.category)));
 

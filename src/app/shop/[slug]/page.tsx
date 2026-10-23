@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { getProduct, products } from "@/lib/products";
 import { formatMoney } from "@/lib/format";
 import { commerce } from "@/lib/site";
+import { siteUrl } from "@/lib/stripe";
 import AddToCartButton from "@/components/AddToCartButton";
 import ProductCard from "@/components/ProductCard";
 import { CardIcon, TruckIcon } from "@/components/Icons";
@@ -21,7 +22,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   return {
     title: `${p.title} (${p.purchaseCode})`,
     description: p.description.slice(0, 160),
-    openGraph: { images: [{ url: p.image }] },
+    openGraph: { images: [{ url: siteUrl() + p.image }] },
   };
 }
 

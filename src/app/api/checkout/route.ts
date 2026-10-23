@@ -45,7 +45,7 @@ export async function POST(req: Request) {
         product_data: {
           name: `${l.product.title}`,
           description: `Purchase code ${l.product.purchaseCode}`,
-          images: [l.product.image],
+          images: [base + l.product.image],
         },
       },
     }));

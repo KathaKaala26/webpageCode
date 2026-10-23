@@ -69,6 +69,14 @@ model OrderItem {
   quantity       Int
 }
 
+// Admin-uploaded replacement image for a product (keyed by products.ts slug).
+// When absent, the product's original image (from products.ts) is used.
+model ProductImage {
+  slug      String   @id
+  url       String
+  updatedAt DateTime @updatedAt
+}
+
 // Messages left through the chat assistant ("leave us a message"),
 // replacing the Wix Chat inbox.
 model Enquiry {
