@@ -237,6 +237,11 @@ export function defaultProductImage(slug: string): string | undefined {
   return rawProducts.find((p) => p.slug === slug)?.image;
 }
 
+/** The original (non-overridable) price for a product, by slug. */
+export function defaultProductPrice(slug: string): number | undefined {
+  return rawProducts.find((p) => p.slug === slug)?.priceCents;
+}
+
 export const categories = Array.from(new Set(products.map((p) => p.category)));
 
 export function getProduct(slug: string): Product | undefined {

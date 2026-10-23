@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getProduct, products } from "@/lib/products";
+import { pricedProducts } from "@/lib/pricing";
 import { formatMoney } from "@/lib/format";
 import { commerce } from "@/lib/site";
 import { siteUrl } from "@/lib/stripe";
@@ -11,6 +12,8 @@ import ProductCard from "@/components/ProductCard";
 import { CardIcon, TruckIcon } from "@/components/Icons";
 
 type Params = { params: Promise<{ slug: string }> };
+
+export const dynamic = "force-dynamic";
 
 export function generateStaticParams() {
   return products.map((p) => ({ slug: p.slug }));
@@ -27,11 +30,13 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 }
 
 export default async function ProductPage({ params }: Params) {
-  const p = getProduct((await params).slug);
+  const { slug } = await params;
+  const priced = await pricedProducts();
+  const p = priced.find((x) => x.slug === slug);
   if (!p) notFound();
 
-  const related = products.filter((x) => x.slug !== p.slug && x.category === p.category).slice(0, 3);
-  const more = related.length ? related : products.filter((x) => x.slug !== p.slug).slice(0, 3);
+  const related = priced.filter((x) => x.slug !== p.slug && x.category === p.category).slice(0, 3);
+  const more = related.length ? related : priced.filter((x) => x.slug !== p.slug).slice(0, 3);
 
   return (
     <>

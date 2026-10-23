@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { getProduct, WIX } from "@/lib/products";
+import { WIX } from "@/lib/products";
+import { pricedProducts } from "@/lib/pricing";
 import AddToCartButton from "@/components/AddToCartButton";
 import SectionHeading from "@/components/SectionHeading";
 import { formatMoney } from "@/lib/format";
 
 export const metadata: Metadata = { title: "PATTACHITRA" };
+export const dynamic = "force-dynamic";
 
 const ROOM =
   "These paintings starkly contrast and grab anyone's attention when they meet in a room, making them perfect for any event or to simply decorate your room or house!";
@@ -21,7 +23,9 @@ const sections = [
   { heading: "Vintage", slug: "vintage" },
 ];
 
-export default function PattachitraPage() {
+export default async function PattachitraPage() {
+  const priced = await pricedProducts();
+
   return (
     <>
       <section className="bg-white">
@@ -41,7 +45,7 @@ export default function PattachitraPage() {
 
       <div className="container-kk space-y-16 py-16 sm:space-y-24 sm:py-24">
         {sections.map((s, i) => {
-          const p = getProduct(s.slug);
+          const p = priced.find((x) => x.slug === s.slug);
           if (!p) return null;
           const flip = i % 2 === 1;
           return (

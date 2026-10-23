@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { getProduct, type Product } from "@/lib/products";
 import { commerce } from "@/lib/site";
+import { usePriceOverrides } from "@/lib/usePriceOverrides";
 
 type StoredItem = { slug: string; quantity: number };
 export type CartLine = { product: Product; quantity: number; lineCents: number };
@@ -40,6 +41,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const priceOverrides = usePriceOverrides();
 
   useEffect(() => {
     setItems(load());
@@ -89,10 +91,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const lines = useMemo<CartLine[]>(
     () =>
       items.flatMap((i) => {
-        const product = getProduct(i.slug);
-        return product ? [{ product, quantity: i.quantity, lineCents: product.priceCents * i.quantity }] : [];
+        const raw = getProduct(i.slug);
+        if (!raw) return [];
+        const priceCents = priceOverrides[i.slug] ?? raw.priceCents;
+        const product = priceCents === raw.priceCents ? raw : { ...raw, priceCents };
+        return [{ product, quantity: i.quantity, lineCents: priceCents * i.quantity }];
       }),
-    [items],
+    [items, priceOverrides],
   );
 
   const value: CartCtx = {

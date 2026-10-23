@@ -41,6 +41,15 @@ export async function toggleEnquiry(fd: FormData) {
   revalidatePath("/admin");
 }
 
+function revalidateCatalog(slug: string) {
+  revalidatePath("/admin");
+  revalidatePath(`/img/${slug}`);
+  revalidatePath("/shop");
+  revalidatePath(`/shop/${slug}`);
+  revalidatePath("/pattachitra");
+  revalidatePath("/");
+}
+
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"];
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
@@ -67,11 +76,7 @@ export async function uploadProductImage(_prev: { error?: string } | undefined, 
     update: { url: data.publicUrl },
   });
 
-  revalidatePath("/admin");
-  revalidatePath(`/img/${slug}`);
-  revalidatePath("/shop");
-  revalidatePath(`/shop/${slug}`);
-  revalidatePath("/");
+  revalidateCatalog(slug);
   return {};
 }
 
@@ -80,9 +85,32 @@ export async function removeProductImage(fd: FormData) {
   const slug = String(fd.get("slug") ?? "");
   if (!slug) return;
   await prisma.productImage.deleteMany({ where: { slug } });
-  revalidatePath("/admin");
-  revalidatePath(`/img/${slug}`);
-  revalidatePath("/shop");
-  revalidatePath(`/shop/${slug}`);
-  revalidatePath("/");
+  revalidateCatalog(slug);
+}
+
+export async function updateProductPrice(_prev: { error?: string } | undefined, fd: FormData): Promise<{ error?: string }> {
+  if (!(await isAdmin())) redirect("/admin");
+  const slug = String(fd.get("slug") ?? "");
+  const product = getProduct(slug);
+  if (!product) return { error: "Unknown product." };
+
+  const dollars = Number(String(fd.get("price") ?? "").trim());
+  if (!Number.isFinite(dollars) || dollars <= 0) return { error: "Enter a valid price." };
+  const priceCents = Math.round(dollars * 100);
+
+  await prisma.productPrice.upsert({
+    where: { slug },
+    create: { slug, priceCents },
+    update: { priceCents },
+  });
+  revalidateCatalog(slug);
+  return {};
+}
+
+export async function removeProductPrice(fd: FormData) {
+  if (!(await isAdmin())) redirect("/admin");
+  const slug = String(fd.get("slug") ?? "");
+  if (!slug) return;
+  await prisma.productPrice.deleteMany({ where: { slug } });
+  revalidateCatalog(slug);
 }

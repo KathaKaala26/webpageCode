@@ -1,21 +1,25 @@
 import Image from "next/image";
 import Link from "next/link";
-import { getProduct, products, WIX, type Product } from "@/lib/products";
+import { products, WIX, type Product } from "@/lib/products";
+import { pricedProducts } from "@/lib/pricing";
 import ProductCard from "@/components/ProductCard";
 import SectionHeading from "@/components/SectionHeading";
 import { formatMoney } from "@/lib/format";
 
-const pick = (...slugs: string[]) => slugs.map(getProduct).filter((p): p is Product => Boolean(p));
-
-const gallery = pick("krsna-leelas", "stories-of-life", "small-art-decor");
-const palmLeaf = pick("palm-leaf-gb101", "palm-leaf-kn14", "palm-leaf-gb-101");
-const colorful = pick("colorful-hd105", "colorful-rhc150");
-const additional = pick("palm-leaf-gb-101", "abstract-and-colorful");
+export const dynamic = "force-dynamic";
 
 const INTRO =
   "At Katha and Kaala, we offer a blend of authentic art pieces, from Jagannath temple art filled with Pattachitra, Tanjore artworks filled with gold in the South, and the endless art form of leelas of Lord Krsna. We focus on building trust with our customers. We strive to offer a diverse range of art and authentic pieces because art is something that isn't used once; it is passed down through generations as a legacy.";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const priced = await pricedProducts();
+  const pick = (...slugs: string[]) => slugs.map((s) => priced.find((p) => p.slug === s)).filter((p): p is Product => Boolean(p));
+
+  const gallery = pick("krsna-leelas", "stories-of-life", "small-art-decor");
+  const palmLeaf = pick("palm-leaf-gb101", "palm-leaf-kn14", "palm-leaf-gb-101");
+  const colorful = pick("colorful-hd105", "colorful-rhc150");
+  const additional = pick("palm-leaf-gb-101", "abstract-and-colorful");
+
   return (
     <>
       {/* ── Hero ─────────────────────────────────────────── */}

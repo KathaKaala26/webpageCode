@@ -2,6 +2,7 @@ import { randomBytes } from "crypto";
 import { getProduct, type Product } from "./products";
 import { commerce } from "./site";
 import { shippingFor } from "./format";
+import { priceOverrides } from "./pricing";
 
 export type CheckoutItemInput = { slug: string; quantity: number };
 
@@ -57,9 +58,9 @@ export function parseCustomer(raw: unknown): CustomerInput {
   return c;
 }
 
-/** Prices are always recomputed on the server from the catalogue — the
- *  browser only sends slugs and quantities. */
-export function priceItems(raw: unknown, paymentMethod: "STRIPE" | "COD"): PricedOrder {
+/** Prices are always recomputed on the server from the catalogue (plus any
+ *  admin price override) — the browser only sends slugs and quantities. */
+export async function priceItems(raw: unknown, paymentMethod: "STRIPE" | "COD"): Promise<PricedOrder> {
   if (!Array.isArray(raw) || raw.length === 0) throw new CheckoutError("Your cart is empty.");
   const merged = new Map<string, number>();
   for (const it of raw as CheckoutItemInput[]) {
@@ -68,11 +69,13 @@ export function priceItems(raw: unknown, paymentMethod: "STRIPE" | "COD"): Price
     if (!slug || !Number.isFinite(q) || q < 1) continue;
     merged.set(slug, Math.min((merged.get(slug) ?? 0) + q, commerce.maxQtyPerItem));
   }
+  const overrides = await priceOverrides();
   const lines: PricedLine[] = [];
   for (const [slug, quantity] of merged) {
-    const product = getProduct(slug);
-    if (!product) throw new CheckoutError("An item in your cart is no longer available.");
-    if (!product.available) throw new CheckoutError(`"${product.title}" has just sold out.`);
+    const raw = getProduct(slug);
+    if (!raw) throw new CheckoutError("An item in your cart is no longer available.");
+    if (!raw.available) throw new CheckoutError(`"${raw.title}" has just sold out.`);
+    const product = overrides.has(slug) ? { ...raw, priceCents: overrides.get(slug)! } : raw;
     lines.push({ product, quantity, lineCents: product.priceCents * quantity });
   }
   if (!lines.length) throw new CheckoutError("Your cart is empty.");

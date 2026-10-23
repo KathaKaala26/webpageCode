@@ -9,6 +9,7 @@ import { QUICK_START, reply, type BotAction } from "@/lib/chatbot";
 import { formatMoney } from "@/lib/format";
 import { site } from "@/lib/site";
 import { useCart } from "@/context/CartContext";
+import { usePriceOverrides } from "@/lib/usePriceOverrides";
 import { ChatIcon, CloseIcon, KKMark, SendIcon } from "./Icons";
 
 type Msg = {
@@ -31,6 +32,7 @@ const WELCOME: Msg = {
 export default function ChatWidget() {
   const pathname = usePathname();
   const { add } = useCart();
+  const priceOverrides = usePriceOverrides();
   const [open, setOpen] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([WELCOME]);
   const [input, setInput] = useState("");
@@ -155,7 +157,7 @@ export default function ChatWidget() {
                         </Link>
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-bold">{p.title}</p>
-                          <p className="text-xs text-ink-soft">{p.purchaseCode} · {formatMoney(p.priceCents)}</p>
+                          <p className="text-xs text-ink-soft">{p.purchaseCode} · {formatMoney(priceOverrides[p.slug] ?? p.priceCents)}</p>
                           {p.available ? (
                             <button type="button" onClick={() => add(p.slug)} className="mt-1 text-xs font-extrabold text-sindoor hover:underline">
                               + Add to cart

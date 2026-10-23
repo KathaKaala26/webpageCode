@@ -77,6 +77,15 @@ model ProductImage {
   updatedAt DateTime @updatedAt
 }
 
+// Admin-set replacement price for a product (keyed by products.ts slug).
+// When absent, the product's original priceCents (from products.ts) is used.
+// This is the authoritative source checkout reads from, so it's always safe.
+model ProductPrice {
+  slug       String   @id
+  priceCents Int
+  updatedAt  DateTime @updatedAt
+}
+
 // Messages left through the chat assistant ("leave us a message"),
 // replacing the Wix Chat inbox.
 model Enquiry {

@@ -6,7 +6,8 @@ import { formatMoney } from "@/lib/format";
 import { products } from "@/lib/products";
 import LoginForm from "./LoginForm";
 import ImageUploadForm from "./ImageUploadForm";
-import { logout, removeProductImage, toggleEnquiry, updateOrderStatus } from "./actions";
+import PriceEditForm from "./PriceEditForm";
+import { logout, removeProductImage, removeProductPrice, toggleEnquiry, updateOrderStatus } from "./actions";
 
 export const metadata: Metadata = { title: "Admin", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -45,7 +46,7 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
   const { tab = "orders", status } = await searchParams;
   const validStatus = status && STATUS_LABEL[status] ? status : undefined;
 
-  const [orders, enquiries, counts, images] = await Promise.all([
+  const [orders, enquiries, counts, images, prices] = await Promise.all([
     tab === "orders"
       ? prisma.order.findMany({
           where: validStatus ? { status: validStatus as never } : { NOT: { status: "PENDING_PAYMENT" } },
@@ -56,10 +57,12 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
       : Promise.resolve([]),
     tab === "messages" ? prisma.enquiry.findMany({ orderBy: { createdAt: "desc" }, take: 100 }) : Promise.resolve([]),
     prisma.order.groupBy({ by: ["status"], _count: true }),
-    tab === "images" ? prisma.productImage.findMany() : Promise.resolve([]),
+    tab === "products" ? prisma.productImage.findMany() : Promise.resolve([]),
+    tab === "products" ? prisma.productPrice.findMany() : Promise.resolve([]),
   ]);
   const countOf = (s: string) => counts.find((c) => c.status === s)?._count ?? 0;
-  const overrideOf = (slug: string) => images.find((i) => i.slug === slug);
+  const imageOverrideOf = (slug: string) => images.find((i) => i.slug === slug);
+  const priceOverrideOf = (slug: string) => prices.find((i) => i.slug === slug);
 
   return (
     <section className="container-kk py-10">
@@ -74,7 +77,7 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
         {[
           ["orders", "Orders"],
           ["messages", "Chat messages"],
-          ["images", "Product images"],
+          ["products", "Products"],
         ].map(([k, label]) => (
           <Link key={k} href={`/admin?tab=${k}`} className={`-mb-px border-b-2 px-4 py-3 text-sm font-bold ${tab === k ? "border-sindoor text-sindoor" : "border-transparent text-ink-soft"}`}>
             {label}
@@ -175,11 +178,13 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
         </ul>
       )}
 
-      {tab === "images" && (
+      {tab === "products" && (
         <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {products.map((p) => {
-            const override = overrideOf(p.slug);
-            const src = override ? `/img/${p.slug}?v=${override.updatedAt.getTime()}` : `/img/${p.slug}`;
+            const imageOverride = imageOverrideOf(p.slug);
+            const priceOverride = priceOverrideOf(p.slug);
+            const src = imageOverride ? `/img/${p.slug}?v=${imageOverride.updatedAt.getTime()}` : `/img/${p.slug}`;
+            const currentPriceCents = priceOverride?.priceCents ?? p.priceCents;
             return (
               <li key={p.slug} className="card space-y-3 p-4">
                 <div className="relative aspect-square overflow-hidden rounded-xl bg-shankh-dark">
@@ -188,15 +193,30 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
                 </div>
                 <div>
                   <p className="text-sm font-bold">{p.title}</p>
-                  <p className="text-xs text-ink-soft">{p.purchaseCode} · {override ? "Custom image" : "Original image"}</p>
+                  <p className="text-xs text-ink-soft">{p.purchaseCode} · {imageOverride ? "Custom image" : "Original image"}</p>
                 </div>
                 <ImageUploadForm slug={p.slug} />
-                {override && (
+                {imageOverride && (
                   <form action={removeProductImage}>
                     <input type="hidden" name="slug" value={p.slug} />
                     <button className="text-xs font-bold text-sindoor hover:underline">Revert to original image</button>
                   </form>
                 )}
+
+                <div className="border-t border-ink/10 pt-3">
+                  <p className="text-xs font-bold text-ink-soft">
+                    Price · {formatMoney(currentPriceCents)}{priceOverride ? " (custom)" : ""}
+                  </p>
+                  <div className="mt-2">
+                    <PriceEditForm slug={p.slug} priceCents={currentPriceCents} />
+                  </div>
+                  {priceOverride && (
+                    <form action={removeProductPrice} className="mt-2">
+                      <input type="hidden" name="slug" value={p.slug} />
+                      <button className="text-xs font-bold text-sindoor hover:underline">Revert to original price</button>
+                    </form>
+                  )}
+                </div>
               </li>
             );
           })}

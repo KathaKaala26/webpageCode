@@ -21,7 +21,7 @@ export async function POST(req: Request) {
     if (method === "COD" && !(commerce.codCountries as readonly string[]).includes(customer.country)) {
       throw new CheckoutError("Cash on delivery isn't available for that country.");
     }
-    const priced = priceItems(body.items, method);
+    const priced = await priceItems(body.items, method);
 
     // ── Cash on delivery: record the order and we're done ─────────────
     if (method === "COD") {
