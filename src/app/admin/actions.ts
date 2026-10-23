@@ -114,3 +114,16 @@ export async function removeProductPrice(fd: FormData) {
   await prisma.productPrice.deleteMany({ where: { slug } });
   revalidateCatalog(slug);
 }
+
+export async function updateExchangeRate(_prev: { error?: string } | undefined, fd: FormData): Promise<{ error?: string }> {
+  if (!(await isAdmin())) redirect("/admin");
+  const rate = Number(String(fd.get("rate") ?? "").trim());
+  if (!Number.isFinite(rate) || rate <= 0) return { error: "Enter a valid rate." };
+  await prisma.exchangeRate.upsert({
+    where: { id: 1 },
+    create: { id: 1, usdToGbp: rate },
+    update: { usdToGbp: rate },
+  });
+  revalidatePath("/admin");
+  return {};
+}

@@ -52,7 +52,7 @@ export default async function HomePage() {
       <section className="container-kk py-16 sm:py-24">
         <SectionHeading title="Welcome to Our Site" />
         <p className="mx-auto mt-8 max-w-3xl text-center text-lg leading-relaxed text-ink-soft">
-          Our mission is to share the authentic beauty of Indian artwork and culture with the world, particularly reaching out to communities outside of India, including the USA and Canada. We believe in the power of art to bridge cultures and foster understanding. By showcasing the rich traditions and vibrant expressions of Indian heritage, we aim to inspire appreciation and connection among diverse audiences. Join us in celebrating the essence of India through its incredible artistic legacy.
+          Our mission is to share the authentic beauty of Indian artwork and culture with the world, particularly reaching out to communities outside of India, including the USA, Canada and the United Kingdom. We believe in the power of art to bridge cultures and foster understanding. By showcasing the rich traditions and vibrant expressions of Indian heritage, we aim to inspire appreciation and connection among diverse audiences. Join us in celebrating the essence of India through its incredible artistic legacy.
         </p>
       </section>
 

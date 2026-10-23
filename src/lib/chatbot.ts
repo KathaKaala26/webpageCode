@@ -110,7 +110,7 @@ export function reply(input: string): BotReply {
 
   if (has(t, "who are you", "about you", "minneapolis", "where are you", "your story"))
     return {
-      text: "We're based in the suburbs of Minneapolis, sharing Indian art and culture with the world — especially communities in the USA and Canada.",
+      text: "We're based in the suburbs of Minneapolis, sharing Indian art and culture with the world — especially communities in the USA, Canada and the United Kingdom.",
       actions: [{ type: "link", label: "More about us", href: "/more-about-us" }],
     };
 

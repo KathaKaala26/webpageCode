@@ -11,6 +11,12 @@ import { CardIcon, LockIcon, TruckIcon } from "@/components/Icons";
 
 type Method = "STRIPE" | "COD";
 
+const ADDRESS_LABELS: Record<string, { region: string; postal: string }> = {
+  CA: { region: "Province", postal: "Postal code" },
+  GB: { region: "County", postal: "Postcode" },
+};
+const DEFAULT_LABELS = { region: "State", postal: "ZIP code" };
+
 export default function CheckoutPage() {
   const router = useRouter();
   const { lines, subtotalCents, ready, clear } = useCart();
@@ -117,6 +123,7 @@ export default function CheckoutPage() {
                   <option key={c.code} value={c.code}>{c.name}</option>
                 ))}
               </select>
+              {country === "GB" && <p className="mt-2 text-xs font-semibold text-sindoor">UK orders are charged in GBP (£) at checkout.</p>}
             </div>
             <div>
               <label htmlFor="addressLine1" className="label">Address</label>
@@ -132,11 +139,11 @@ export default function CheckoutPage() {
                 <input id="city" name="city" required autoComplete="address-level2" className="field" />
               </div>
               <div>
-                <label htmlFor="region" className="label">{country === "CA" ? "Province" : "State"}</label>
+                <label htmlFor="region" className="label">{(ADDRESS_LABELS[country] ?? DEFAULT_LABELS).region}</label>
                 <input id="region" name="region" required autoComplete="address-level1" className="field" />
               </div>
               <div>
-                <label htmlFor="postalCode" className="label">{country === "CA" ? "Postal code" : "ZIP code"}</label>
+                <label htmlFor="postalCode" className="label">{(ADDRESS_LABELS[country] ?? DEFAULT_LABELS).postal}</label>
                 <input id="postalCode" name="postalCode" required autoComplete="postal-code" className="field" />
               </div>
             </div>

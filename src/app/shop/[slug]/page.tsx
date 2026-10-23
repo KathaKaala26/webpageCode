@@ -88,7 +88,7 @@ export default async function ProductPage({ params }: Params) {
               <li className="flex items-start gap-3">
                 <TruckIcon className="mt-0.5 h-5 w-5 shrink-0 text-sindoor" />
                 <span>
-                  Ships across the USA &amp; Canada
+                  Ships across the USA, Canada &amp; UK
                   {commerce.freeShippingThresholdCents > 0 && <> · free shipping over {formatMoney(commerce.freeShippingThresholdCents)}</>}
                 </span>
               </li>

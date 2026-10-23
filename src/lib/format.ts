@@ -1,9 +1,9 @@
 import { commerce } from "./site";
 
-export function formatMoney(cents: number): string {
+export function formatMoney(cents: number, currency: string = commerce.currency): string {
   return new Intl.NumberFormat(commerce.locale, {
     style: "currency",
-    currency: commerce.currency.toUpperCase(),
+    currency: currency.toUpperCase(),
   }).format(cents / 100);
 }
 

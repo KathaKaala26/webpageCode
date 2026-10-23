@@ -9,7 +9,7 @@ import CartDrawer from "@/components/CartDrawer";
 import Toast from "@/components/Toast";
 import ChatWidget from "@/components/ChatWidget";
 import PWARegister from "@/components/PWARegister";
-import { site } from "@/lib/site";
+import { commerce, site } from "@/lib/site";
 
 const display = Cormorant_Garamond({
   subsets: ["latin"],
@@ -31,14 +31,14 @@ const orgJsonLd = {
   name: site.name,
   description: site.description,
   url: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
-  areaServed: ["US", "CA"],
+  areaServed: commerce.shipCountries.map((c) => c.code),
   address: { "@type": "PostalAddress", addressLocality: "Minneapolis", addressRegion: "MN", addressCountry: "US" },
 };
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
   title: {
-    default: `${site.name} | Authentic Indian Pattachitra Art & Krsna Leelas — Ships to USA & Canada`,
+    default: `${site.name} | Authentic Indian Pattachitra Art & Krsna Leelas — Ships to USA, Canada & the UK`,
     template: `%s | ${site.name}`,
   },
   description: site.description,

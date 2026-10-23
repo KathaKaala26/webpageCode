@@ -86,6 +86,14 @@ model ProductPrice {
   updatedAt  DateTime @updatedAt
 }
 
+// Admin-set USD -> GBP conversion rate used to charge UK orders in GBP at
+// checkout. Singleton row (id always 1).
+model ExchangeRate {
+  id        Int      @id @default(1)
+  usdToGbp  Float
+  updatedAt DateTime @updatedAt
+}
+
 // Messages left through the chat assistant ("leave us a message"),
 // replacing the Wix Chat inbox.
 model Enquiry {

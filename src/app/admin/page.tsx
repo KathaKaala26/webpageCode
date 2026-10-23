@@ -4,9 +4,11 @@ import { isAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 import { formatMoney } from "@/lib/format";
 import { products } from "@/lib/products";
+import { DEFAULT_USD_TO_GBP } from "@/lib/currency";
 import LoginForm from "./LoginForm";
 import ImageUploadForm from "./ImageUploadForm";
 import PriceEditForm from "./PriceEditForm";
+import ExchangeRateForm from "./ExchangeRateForm";
 import { logout, removeProductImage, removeProductPrice, toggleEnquiry, updateOrderStatus } from "./actions";
 
 export const metadata: Metadata = { title: "Admin", robots: { index: false, follow: false } };
@@ -46,7 +48,7 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
   const { tab = "orders", status } = await searchParams;
   const validStatus = status && STATUS_LABEL[status] ? status : undefined;
 
-  const [orders, enquiries, counts, images, prices] = await Promise.all([
+  const [orders, enquiries, counts, images, prices, exchangeRate] = await Promise.all([
     tab === "orders"
       ? prisma.order.findMany({
           where: validStatus ? { status: validStatus as never } : { NOT: { status: "PENDING_PAYMENT" } },
@@ -59,6 +61,7 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
     prisma.order.groupBy({ by: ["status"], _count: true }),
     tab === "products" ? prisma.productImage.findMany() : Promise.resolve([]),
     tab === "products" ? prisma.productPrice.findMany() : Promise.resolve([]),
+    tab === "products" ? prisma.exchangeRate.findUnique({ where: { id: 1 } }) : Promise.resolve(null),
   ]);
   const countOf = (s: string) => counts.find((c) => c.status === s)?._count ?? 0;
   const imageOverrideOf = (slug: string) => images.find((i) => i.slug === slug);
@@ -135,7 +138,7 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
                           </li>
                         ))}
                       </ul>
-                      <p className="mt-2 font-extrabold">Total {formatMoney(o.totalCents)}</p>
+                      <p className="mt-2 font-extrabold">Total {formatMoney(o.totalCents, o.currency)}</p>
                     </div>
                   </div>
                   <form action={updateOrderStatus} className="mt-4 flex flex-wrap items-center gap-2 border-t border-ink/10 pt-4">
@@ -179,6 +182,14 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
       )}
 
       {tab === "products" && (
+        <>
+          <div className="card mt-6 p-4">
+            <p className="text-sm font-bold text-maroon">UK checkout exchange rate</p>
+            <p className="mt-1 text-xs text-ink-soft">Used to convert USD catalogue prices to GBP for United Kingdom orders at checkout.</p>
+            <div className="mt-2">
+              <ExchangeRateForm usdToGbp={exchangeRate?.usdToGbp ?? DEFAULT_USD_TO_GBP} />
+            </div>
+          </div>
         <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {products.map((p) => {
             const imageOverride = imageOverrideOf(p.slug);
@@ -221,6 +232,7 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
             );
           })}
         </ul>
+        </>
       )}
     </section>
   );

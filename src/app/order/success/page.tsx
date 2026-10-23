@@ -54,7 +54,7 @@ export default async function OrderSuccessPage({ searchParams }: { searchParams:
         <h1 className="mt-2 text-4xl font-semibold sm:text-5xl">Thank you, {order.customerName.split(" ")[0]}!</h1>
         <p className="mx-auto mt-4 max-w-xl text-ink-soft">
           {isCOD
-            ? `Your order is placed. Please keep ${formatMoney(order.totalCents)} in cash ready for when your artwork is delivered.`
+            ? `Your order is placed. Please keep ${formatMoney(order.totalCents, order.currency)} in cash ready for when your artwork is delivered.`
             : paid
               ? "Your payment was received and your order is confirmed."
               : "We're confirming your payment with Stripe — this usually takes a few seconds. Refresh this page if the status hasn't updated."}
@@ -72,15 +72,15 @@ export default async function OrderSuccessPage({ searchParams }: { searchParams:
                 <p className="truncate font-semibold">{it.title}</p>
                 <p className="text-xs text-ink-soft">{it.purchaseCode} · Qty {it.quantity}</p>
               </div>
-              <span className="font-bold">{formatMoney(it.unitPriceCents * it.quantity)}</span>
+              <span className="font-bold">{formatMoney(it.unitPriceCents * it.quantity, order.currency)}</span>
             </li>
           ))}
         </ul>
         <dl className="mt-4 space-y-2 border-t border-ink/10 pt-4 text-sm">
-          <div className="flex justify-between"><dt>Subtotal</dt><dd>{formatMoney(order.subtotalCents)}</dd></div>
-          <div className="flex justify-between"><dt>Shipping</dt><dd>{order.shippingCents ? formatMoney(order.shippingCents) : "Free"}</dd></div>
-          {order.codFeeCents > 0 && <div className="flex justify-between"><dt>COD handling</dt><dd>{formatMoney(order.codFeeCents)}</dd></div>}
-          <div className="flex justify-between text-lg"><dt className="font-bold">Total</dt><dd className="font-extrabold">{formatMoney(order.totalCents)}</dd></div>
+          <div className="flex justify-between"><dt>Subtotal</dt><dd>{formatMoney(order.subtotalCents, order.currency)}</dd></div>
+          <div className="flex justify-between"><dt>Shipping</dt><dd>{order.shippingCents ? formatMoney(order.shippingCents, order.currency) : "Free"}</dd></div>
+          {order.codFeeCents > 0 && <div className="flex justify-between"><dt>COD handling</dt><dd>{formatMoney(order.codFeeCents, order.currency)}</dd></div>}
+          <div className="flex justify-between text-lg"><dt className="font-bold">Total</dt><dd className="font-extrabold">{formatMoney(order.totalCents, order.currency)}</dd></div>
           <div className="flex justify-between text-ink-soft"><dt>Payment</dt><dd>{isCOD ? "Cash on delivery" : paid ? "Paid by card" : "Card — confirming"}</dd></div>
         </dl>
         <div className="mt-5 rounded-xl bg-shankh p-4 text-sm">

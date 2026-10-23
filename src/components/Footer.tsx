@@ -59,7 +59,7 @@ export default function Footer() {
                 </a>
               </p>
             )}
-            <p className="pt-2 text-shankh/60">Shipping across the USA &amp; Canada · Cash on delivery or card</p>
+            <p className="pt-2 text-shankh/60">Shipping across the USA, Canada &amp; UK · Cash on delivery or card</p>
           </address>
         </div>
       </div>
