@@ -15,7 +15,9 @@
   "dependencies": {
     "@prisma/client": "^6.5.0",
     "@supabase/supabase-js": "^2.118.0",
+    "@techstark/opencv-js": "^5.0.0-release.1",
     "@vercel/analytics": "^2.0.1",
+    "jscanify": "^1.4.3",
     "next": "^16.4.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

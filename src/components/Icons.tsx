@@ -67,6 +67,12 @@ export const PhoneIcon = ({ className = "h-5 w-5" }: P) => (
     <path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2Z" />
   </svg>
 );
+export const WallIcon = ({ className = "h-5 w-5" }: P) => (
+  <svg viewBox="0 0 24 24" className={className} {...base} aria-hidden>
+    <rect x="3" y="4" width="18" height="16" rx="1.5" />
+    <rect x="7" y="8" width="10" height="7" rx="0.5" />
+  </svg>
+);
 
 /** KK monogram — the logo mark from the original site, set in a lotus-petal frame. */
 export const KKMark = ({ className = "h-10 w-10" }: P) => (

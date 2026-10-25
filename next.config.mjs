@@ -21,6 +21,16 @@ const nextConfig = {
       },
     ];
   },
+  turbopack: {
+    resolveAlias: {
+      // @techstark/opencv-js's emscripten glue references Node core modules
+      // that don't exist in the browser (only reached via dynamic import()
+      // from the wall-preview feature).
+      fs: { browser: "./src/lib/emptyModule.js" },
+      path: { browser: "./src/lib/emptyModule.js" },
+      crypto: { browser: "./src/lib/emptyModule.js" },
+    },
+  },
 };
 
 export default nextConfig;

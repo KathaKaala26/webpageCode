@@ -8,6 +8,7 @@ import { formatMoney } from "@/lib/format";
 import { commerce } from "@/lib/site";
 import { siteUrl } from "@/lib/stripe";
 import AddToCartButton from "@/components/AddToCartButton";
+import WallPreviewButton from "@/components/WallPreviewButton";
 import ProductCard from "@/components/ProductCard";
 import { CardIcon, TruckIcon } from "@/components/Icons";
 
@@ -82,6 +83,7 @@ export default async function ProductPage({ params }: Params) {
 
             <div className="mt-8">
               <AddToCartButton slug={p.slug} available={p.available} withQty />
+              <WallPreviewButton artSrc={p.image} artAlt={p.title} />
             </div>
 
             <ul className="mt-8 space-y-3 rounded-2xl bg-white p-5 text-sm shadow-card">
