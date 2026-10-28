@@ -115,6 +115,13 @@ export async function removeProductPrice(fd: FormData) {
   revalidateCatalog(slug);
 }
 
+/** Clears every admin price override in one go — for undoing bulk test data (e.g. a batch of $0.01 prices). */
+export async function removeAllProductPrices() {
+  if (!(await isAdmin())) redirect("/admin");
+  await prisma.productPrice.deleteMany({});
+  revalidatePath("/", "layout");
+}
+
 export async function updateExchangeRate(_prev: { error?: string } | undefined, fd: FormData): Promise<{ error?: string }> {
   if (!(await isAdmin())) redirect("/admin");
   const rate = Number(String(fd.get("rate") ?? "").trim());

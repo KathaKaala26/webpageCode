@@ -9,7 +9,7 @@ import LoginForm from "./LoginForm";
 import ImageUploadForm from "./ImageUploadForm";
 import PriceEditForm from "./PriceEditForm";
 import ExchangeRateForm from "./ExchangeRateForm";
-import { logout, removeProductImage, removeProductPrice, toggleEnquiry, updateOrderStatus } from "./actions";
+import { logout, removeAllProductPrices, removeProductImage, removeProductPrice, toggleEnquiry, updateOrderStatus } from "./actions";
 
 export const metadata: Metadata = { title: "Admin", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -242,6 +242,17 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
               <ExchangeRateForm usdToGbp={exchangeRate?.usdToGbp ?? DEFAULT_USD_TO_GBP} />
             </div>
           </div>
+
+          {prices.length > 0 && (
+            <div className="card mt-4 flex flex-wrap items-center justify-between gap-3 p-4">
+              <p className="text-sm text-ink-soft">
+                {prices.length} product{prices.length === 1 ? "" : "s"} currently {prices.length === 1 ? "has" : "have"} a custom price override.
+              </p>
+              <form action={removeAllProductPrices}>
+                <button className="text-xs font-bold text-sindoor hover:underline">Revert ALL to catalogue prices</button>
+              </form>
+            </div>
+          )}
         <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {products.map((p) => {
             const imageOverride = imageOverrideOf(p.slug);
