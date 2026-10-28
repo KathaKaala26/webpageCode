@@ -54,7 +54,7 @@ const rawProducts: Product[] = [
     title: "Krsna Leelas",
     category: "Krsna Leelas",
     image: WIX + "62a063_e329f2be4437462eaf71d6c754e01484~mv2.jpeg",
-    priceCents: 18900,
+    priceCents: 28900,
     description:
       "Much of our artwork highlights the timeless, elegant, and enchanting leelas of Lord Krsna. From the playful stories with Maa Yasoda to the enchanting leelas with the Gopis, and the cherished leela of the Lord, as described here.",
     available: true,
