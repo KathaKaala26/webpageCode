@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Product } from "@/lib/products";
 import { formatMoney } from "@/lib/format";
-import AddToCartButton from "./AddToCartButton";
+import InquireButton from "./InquireButton";
 
 export default function ProductCard({ product, priority = false }: { product: Product; priority?: boolean }) {
   return (
@@ -34,7 +34,7 @@ export default function ProductCard({ product, priority = false }: { product: Pr
         </div>
         <div className="flex items-center justify-between gap-3">
           <span className="text-lg font-extrabold text-ink">{formatMoney(product.priceCents)}</span>
-          <AddToCartButton slug={product.slug} available={product.available} compact />
+          <InquireButton title={product.title} available={product.available} compact />
         </div>
       </div>
     </article>

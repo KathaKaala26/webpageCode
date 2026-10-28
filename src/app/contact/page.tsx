@@ -5,8 +5,12 @@ import ContactForm from "@/components/ContactForm";
 
 export const metadata: Metadata = { title: "Contact Us", description: `Get in touch with ${site.name}.` };
 
-export default function ContactPage() {
+type SP = Promise<{ title?: string }>;
+
+export default async function ContactPage({ searchParams }: { searchParams: SP }) {
   const { phone, email } = site.location;
+  const { title } = await searchParams;
+  const initialMessage = title ? `Hi, I'm interested in "${title}". Could you tell me more about pricing and how to purchase?` : "";
 
   return (
     <section className="container-kk py-12 sm:py-16">
@@ -36,7 +40,7 @@ export default function ContactPage() {
           </p>
         </div>
 
-        <ContactForm />
+        <ContactForm initialMessage={initialMessage} />
       </div>
     </section>
   );

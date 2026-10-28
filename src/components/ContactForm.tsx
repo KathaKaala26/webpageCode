@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 
-export default function ContactForm() {
+export default function ContactForm({ initialMessage = "" }: { initialMessage?: string }) {
   const [sending, setSending] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -57,6 +57,7 @@ export default function ContactForm() {
           name="message"
           required
           rows={5}
+          defaultValue={initialMessage}
           placeholder="Let us know which artwork you'd like, and we'll follow up to arrange payment and shipping."
           className="field"
         />

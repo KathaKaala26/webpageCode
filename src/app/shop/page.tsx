@@ -32,7 +32,7 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
     <section className="container-kk py-14 sm:py-20">
       <SectionHeading as="h1" eyebrow="Online Store" title="Shop the Collection" />
       <p className="mx-auto mt-6 max-w-2xl text-center text-ink-soft">
-        Every piece is sourced directly from artisans in India. Pay securely by card, or choose cash on delivery at checkout.
+        Every piece is sourced directly from artisans in India. Tap Enquire on any piece and we'll help you arrange payment and shipping.
       </p>
 
       <nav aria-label="Categories" className="-mx-4 mt-10 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">

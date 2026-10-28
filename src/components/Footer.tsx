@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { nav, site } from "@/lib/site";
-import { KKMark } from "./Icons";
+import { InstagramIcon, KKMark } from "./Icons";
 import InstallButton from "./InstallButton";
 
 export default function Footer() {
@@ -17,8 +17,17 @@ export default function Footer() {
           <p className="mt-4 max-w-md text-sm leading-relaxed text-shankh/70">
             From the small suburbs of Minneapolis, we strive to bring the culture of India to the world stage.
           </p>
-          <div className="mt-6">
+          <div className="mt-6 flex items-center gap-4">
             <InstallButton />
+            <a
+              href="https://www.instagram.com/kathakaala26?exln=MXQzbGo2Znp5eWR2Yg%3D%3D&utm_source=qr"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Katha & Kaala on Instagram"
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/20 text-shankh/80 transition hover:border-haldi-light hover:text-haldi-light"
+            >
+              <InstagramIcon className="h-5 w-5" />
+            </a>
           </div>
         </div>
 

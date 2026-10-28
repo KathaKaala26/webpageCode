@@ -48,20 +48,65 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
   const { tab = "orders", status } = await searchParams;
   const validStatus = status && STATUS_LABEL[status] ? status : undefined;
 
-  const [orders, enquiries, counts, images, prices, exchangeRate] = await Promise.all([
+  // Each query is isolated with .catch() so one broken table (e.g. a schema
+  // change that hasn't been pushed to the database yet) degrades that one
+  // section instead of taking down the whole admin page with a 500.
+  const errors: string[] = [];
+  const logErr = (label: string, e: unknown) => {
+    console.error(`[admin:${label}]`, e);
+    errors.push(label);
+  };
+
+  const [orders, enquiries, counts, unhandledCount, images, prices, exchangeRate] = await Promise.all([
     tab === "orders"
-      ? prisma.order.findMany({
-          where: validStatus ? { status: validStatus as never } : { NOT: { status: "PENDING_PAYMENT" } },
-          include: { items: true },
-          orderBy: { createdAt: "desc" },
-          take: 100,
+      ? prisma.order
+          .findMany({
+            where: validStatus ? { status: validStatus as never } : { NOT: { status: "PENDING_PAYMENT" } },
+            include: { items: true },
+            orderBy: { createdAt: "desc" },
+            take: 100,
+          })
+          .catch((e) => {
+            logErr("orders", e);
+            return [];
+          })
+      : Promise.resolve([]),
+    tab === "messages"
+      ? prisma.enquiry
+          .findMany({ orderBy: { createdAt: "desc" }, take: 100 })
+          .catch((e) => {
+            logErr("messages", e);
+            return [];
+          })
+      : Promise.resolve([]),
+    prisma.order
+      .groupBy({ by: ["status"], _count: true })
+      .catch((e) => {
+        logErr("order-counts", e);
+        return [];
+      }),
+    prisma.enquiry.count({ where: { handled: false } }).catch((e) => {
+      logErr("unhandled-count", e);
+      return 0;
+    }),
+    tab === "products"
+      ? prisma.productImage.findMany().catch((e) => {
+          logErr("images", e);
+          return [];
         })
       : Promise.resolve([]),
-    tab === "messages" ? prisma.enquiry.findMany({ orderBy: { createdAt: "desc" }, take: 100 }) : Promise.resolve([]),
-    prisma.order.groupBy({ by: ["status"], _count: true }),
-    tab === "products" ? prisma.productImage.findMany() : Promise.resolve([]),
-    tab === "products" ? prisma.productPrice.findMany() : Promise.resolve([]),
-    tab === "products" ? prisma.exchangeRate.findUnique({ where: { id: 1 } }) : Promise.resolve(null),
+    tab === "products"
+      ? prisma.productPrice.findMany().catch((e) => {
+          logErr("prices", e);
+          return [];
+        })
+      : Promise.resolve([]),
+    tab === "products"
+      ? prisma.exchangeRate.findUnique({ where: { id: 1 } }).catch((e) => {
+          logErr("exchange-rate", e);
+          return null;
+        })
+      : Promise.resolve(null),
   ]);
   const countOf = (s: string) => counts.find((c) => c.status === s)?._count ?? 0;
   const imageOverrideOf = (slug: string) => images.find((i) => i.slug === slug);
@@ -76,10 +121,17 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
         </form>
       </div>
 
+      {errors.length > 0 && (
+        <p className="mt-4 rounded-xl bg-sindoor/10 px-4 py-3 text-sm font-semibold text-sindoor-dark">
+          Some data couldn't load ({errors.join(", ")}) — the database may be out of sync with the app. Try reloading; if it
+          keeps happening, run <code>npm run db:push</code> against the production database.
+        </p>
+      )}
+
       <nav className="mt-6 flex gap-2 border-b border-ink/10">
         {[
           ["orders", "Orders"],
-          ["messages", "Chat messages"],
+          ["messages", `Chat messages${unhandledCount > 0 ? ` (${unhandledCount})` : ""}`],
           ["products", "Products"],
         ].map(([k, label]) => (
           <Link key={k} href={`/admin?tab=${k}`} className={`-mb-px border-b-2 px-4 py-3 text-sm font-bold ${tab === k ? "border-sindoor text-sindoor" : "border-transparent text-ink-soft"}`}>
