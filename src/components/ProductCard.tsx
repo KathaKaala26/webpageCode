@@ -4,7 +4,15 @@ import type { CatalogProduct } from "@/lib/pricing";
 import { formatMoney } from "@/lib/format";
 import InquireButton from "./InquireButton";
 
-export default function ProductCard({ product, priority = false }: { product: CatalogProduct; priority?: boolean }) {
+export default function ProductCard({
+  product,
+  priority = false,
+  showActions = true,
+}: {
+  product: CatalogProduct;
+  priority?: boolean;
+  showActions?: boolean;
+}) {
   const hasSizes = product.kind === "ART_FRAME" && product.sizes.length > 0;
   const fromPriceCents = hasSizes ? Math.min(...product.sizes.map((s) => s.priceCents)) : product.priceCents;
   return (
@@ -34,12 +42,14 @@ export default function ProductCard({ product, priority = false }: { product: Ca
             </Link>
           </h3>
         </div>
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-lg font-extrabold text-ink">
-            {hasSizes ? `From ${formatMoney(fromPriceCents)}` : formatMoney(fromPriceCents)}
-          </span>
-          <InquireButton title={product.title} available={product.available} compact />
-        </div>
+        {showActions && (
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-lg font-extrabold text-ink">
+              {hasSizes ? `From ${formatMoney(fromPriceCents)}` : formatMoney(fromPriceCents)}
+            </span>
+            <InquireButton title={product.title} available={product.available} compact />
+          </div>
+        )}
       </div>
     </article>
   );

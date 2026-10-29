@@ -47,7 +47,7 @@ function revalidateCatalog(slug: string) {
   revalidatePath(`/img/${slug}`);
   revalidatePath("/shop");
   revalidatePath(`/shop/${slug}`);
-  revalidatePath("/pattachitra");
+  revalidatePath("/puja-essentials");
   revalidatePath("/");
 }
 

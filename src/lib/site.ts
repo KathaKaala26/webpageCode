@@ -41,7 +41,7 @@ export const commerce = {
 export const nav = [
   { href: "/", label: "Home" },
   { href: "/more-about-us", label: "More About Us" },
-  { href: "/pattachitra", label: "Pattachitra" },
+  { href: "/puja-essentials", label: "Puja Essentials" },
   { href: "/books", label: "Books" },
   { href: "/shop", label: "Shop" },
   { href: "/contact", label: "Contact" },

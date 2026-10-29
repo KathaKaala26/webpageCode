@@ -94,7 +94,7 @@ export function reply(input: string): BotReply {
   if (has(t, "jagannath", "odisha", "what is pattachitra", "about pattachitra", "meaning", "history", "chitrakar"))
     return {
       text: "Pattachitra is a traditional art form from Odisha — “patta” means cloth and “chitra” means picture. Painted by Chitrakars with natural pigments, it shows deities like Lord Jagannath, Balabhadra and Subhadra, and stories from the Ramayana and Mahabharata.",
-      actions: [{ type: "link", label: "Read more about us", href: "/more-about-us" }, { type: "link", label: "See Pattachitra", href: "/pattachitra" }],
+      actions: [{ type: "link", label: "Read more about us", href: "/more-about-us" }, { type: "link", label: "See Puja Essentials", href: "/puja-essentials" }],
     };
 
   if (has(t, "book"))

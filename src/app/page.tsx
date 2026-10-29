@@ -99,7 +99,7 @@ export default async function HomePage() {
           <p className="mx-auto mt-8 max-w-3xl text-center leading-relaxed text-ink-soft">{palmLeaf[0]?.description}</p>
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {palmLeaf.map((p) => (
-              <ProductCard key={p.slug} product={p} />
+              <ProductCard key={p.slug} product={p} showActions={false} />
             ))}
           </div>
         </div>
@@ -127,7 +127,7 @@ export default async function HomePage() {
           </div>
           <div className="grid content-start gap-6 sm:grid-cols-2 lg:col-span-2 lg:grid-cols-1">
             {colorful.map((p) => (
-              <ProductCard key={p.slug} product={p} />
+              <ProductCard key={p.slug} product={p} showActions={false} />
             ))}
           </div>
         </div>
@@ -147,7 +147,7 @@ export default async function HomePage() {
         <SectionHeading eyebrow="About" title="Additional Products" />
         <div className="mx-auto mt-12 grid max-w-3xl gap-6 sm:grid-cols-2">
           {additional.map((p) => (
-            <ProductCard key={p.slug} product={p} />
+            <ProductCard key={p.slug} product={p} showActions={false} />
           ))}
         </div>
         <div className="mt-12 text-center">

@@ -13,7 +13,7 @@ const IMAGES = `${VERSION}-images`;
 const PRECACHE = [
   "/",
   "/shop",
-  "/pattachitra",
+  "/puja-essentials",
   "/more-about-us",
   "/books",
   "/offline.html",
