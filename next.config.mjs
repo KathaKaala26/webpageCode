@@ -1,5 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    // Default Server Action body limit is 1MB. The admin image upload form
+    // accepts files up to 5MB (see MAX_IMAGE_BYTES in admin/actions.ts), so
+    // raise this above that plus multipart overhead, or uploads near/above
+    // 1MB fail with an unhandled 500 before reaching our own validation.
+    serverActions: {
+      bodySizeLimit: "6mb",
+    },
+  },
   images: {
     // All artwork stays on the original Wix media CDN — nothing is re-hosted.
     remotePatterns: [{ protocol: "https", hostname: "static.wixstatic.com" }],
