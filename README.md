@@ -83,6 +83,9 @@ npm run dev                     # http://localhost:3000
 | `NEXT_PUBLIC_CONTACT_EMAIL` | Shown in the footer and on `/contact` |
 | `SUPABASE_URL` | Supabase → Project Settings → API → Project URL — used for admin image uploads |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → API Keys → `service_role` secret. **Full-access, server-only — never expose to the browser or commit it.** |
+| `GMAIL_USER` | Optional — Gmail address used to email you new Contact form / chat enquiries. |
+| `GMAIL_APP_PASSWORD` | Optional — **must be a Gmail App Password**, not your account password. myaccount.google.com → Security → 2-Step Verification → App passwords → generate one for "Mail". |
+| `CONTACT_NOTIFY_EMAIL` | Optional — where enquiry emails are sent. Defaults to `GMAIL_USER` if unset. |
 
 Supabase Storage also needs a public bucket named **`product-images`** (created
 once via the Supabase dashboard, or the `@supabase/supabase-js` admin client —

@@ -1,10 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
-import { products, WIX, type Product } from "@/lib/products";
+import { products, WIX } from "@/lib/products";
 import { pricedProducts } from "@/lib/pricing";
+import { homeSections } from "@/lib/home";
 import ProductCard from "@/components/ProductCard";
 import SectionHeading from "@/components/SectionHeading";
-import { formatMoney } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -13,12 +13,12 @@ const INTRO =
 
 export default async function HomePage() {
   const priced = await pricedProducts();
-  const pick = (...slugs: string[]) => slugs.map((s) => priced.find((p) => p.slug === s)).filter((p): p is Product => Boolean(p));
+  const sections = await homeSections(priced);
 
-  const gallery = pick("krsna-leelas", "stories-of-life", "small-art-decor");
-  const palmLeaf = pick("palm-leaf-gb101", "palm-leaf-kn14", "palm-leaf-gb-101");
-  const colorful = pick("colorful-hd105", "colorful-rhc150");
-  const additional = pick("palm-leaf-gb-101", "abstract-and-colorful");
+  const gallery = sections.GALLERY;
+  const palmLeaf = sections.PALM_LEAF;
+  const colorful = sections.COLORFUL;
+  const additional = sections.ADDITIONAL;
 
   return (
     <>
@@ -80,18 +80,12 @@ export default async function HomePage() {
         <div className="mt-12 grid gap-8 md:grid-cols-3">
           {gallery.map((p) => (
             <article key={p.slug} className="card flex flex-col overflow-hidden">
-              <Link href={`/shop/${p.slug}`} className="relative block aspect-[3/2] overflow-hidden">
-                <Image src={p.image} alt={p.title} fill sizes="(min-width:768px) 31vw, 92vw" className="object-cover transition duration-500 hover:scale-105" />
+              <Link href={`/shop/${p.slug}`} className="relative block aspect-[3/2] overflow-hidden bg-shankh-dark">
+                <Image src={p.image} alt={p.title} fill sizes="(min-width:768px) 31vw, 92vw" className="object-contain transition duration-500 hover:scale-105" />
               </Link>
               <div className="flex flex-1 flex-col p-6">
                 <h3 className="text-2xl font-semibold">{p.title}</h3>
-                <p className="mt-3 flex-1 text-sm leading-relaxed text-ink-soft">{p.description}</p>
-                <div className="mt-5 flex items-center justify-between">
-                  <span className="font-extrabold">{formatMoney(p.priceCents)}</span>
-                  <Link href={`/shop/${p.slug}`} className="btn-outline h-10 px-5">
-                    View &amp; buy
-                  </Link>
-                </div>
+                {p.description && <p className="mt-3 flex-1 text-sm leading-relaxed text-ink-soft">{p.description}</p>}
               </div>
             </article>
           ))}

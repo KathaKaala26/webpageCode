@@ -8,6 +8,7 @@ import { formatMoney } from "@/lib/format";
 import { commerce } from "@/lib/site";
 import { siteUrl } from "@/lib/stripe";
 import InquireButton from "@/components/InquireButton";
+import SizeSelector from "@/components/SizeSelector";
 import WallPreviewButton from "@/components/WallPreviewButton";
 import ProductCard from "@/components/ProductCard";
 import { CardIcon, TruckIcon } from "@/components/Icons";
@@ -78,11 +79,17 @@ export default async function ProductPage({ params }: Params) {
           <div>
             <p className="eyebrow">Purchase Code: {p.purchaseCode}</p>
             <h1 className="mt-2 text-4xl font-semibold leading-tight sm:text-5xl">{p.title}</h1>
-            <p className="mt-5 text-3xl font-extrabold text-ink">{formatMoney(p.priceCents)}</p>
-            <p className="mt-6 leading-relaxed text-ink-soft">{p.description}</p>
+
+            {p.kind === "ART_FRAME" && p.sizes.length > 0 ? (
+              <SizeSelector title={p.title} available={p.available} sizes={p.sizes} />
+            ) : (
+              <p className="mt-5 text-3xl font-extrabold text-ink">{formatMoney(p.priceCents)}</p>
+            )}
+
+            {p.description && <p className="mt-6 leading-relaxed text-ink-soft">{p.description}</p>}
 
             <div className="mt-8">
-              <InquireButton title={p.title} available={p.available} />
+              {!(p.kind === "ART_FRAME" && p.sizes.length > 0) && <InquireButton title={p.title} available={p.available} />}
               <WallPreviewButton artSrc={p.image} artAlt={p.title} />
             </div>
 

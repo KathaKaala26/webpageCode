@@ -82,6 +82,12 @@ export const InstagramIcon = ({ className = "h-5 w-5" }: P) => (
   </svg>
 );
 
+export const FacebookIcon = ({ className = "h-5 w-5" }: P) => (
+  <svg viewBox="0 0 24 24" className={className} {...base} aria-hidden>
+    <path d="M15 8.5h-2a2 2 0 0 0-2 2V12H9v3h2v6h3v-6h2.2l.8-3H14v-1.3a.7.7 0 0 1 .7-.7H16V8.6a.6.6 0 0 0-.6-.1Z" />
+  </svg>
+);
+
 /** KK monogram — the logo mark from the original site, set in a lotus-petal frame. */
 export const KKMark = ({ className = "h-10 w-10" }: P) => (
   <svg viewBox="0 0 48 48" className={className} aria-hidden>

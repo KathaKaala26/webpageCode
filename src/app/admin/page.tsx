@@ -5,11 +5,25 @@ import { prisma } from "@/lib/prisma";
 import { formatMoney } from "@/lib/format";
 import { products } from "@/lib/products";
 import { DEFAULT_USD_TO_GBP } from "@/lib/currency";
+import { HOME_SECTIONS, HOME_SECTION_LABEL } from "@/lib/home";
 import LoginForm from "./LoginForm";
 import ImageUploadForm from "./ImageUploadForm";
 import PriceEditForm from "./PriceEditForm";
 import ExchangeRateForm from "./ExchangeRateForm";
-import { logout, removeAllProductPrices, removeProductImage, removeProductPrice, toggleEnquiry, updateOrderStatus } from "./actions";
+import SizeAddForm from "./SizeAddForm";
+import DescriptionEditForm from "./DescriptionEditForm";
+import {
+  logout,
+  removeAllProductPrices,
+  removeProductDescription,
+  removeProductImage,
+  removeProductPrice,
+  removeProductSize,
+  toggleEnquiry,
+  updateHomeSections,
+  updateOrderStatus,
+  updateProductKind,
+} from "./actions";
 
 export const metadata: Metadata = { title: "Admin", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -57,7 +71,7 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
     errors.push(label);
   };
 
-  const [orders, enquiries, counts, unhandledCount, images, prices, exchangeRate] = await Promise.all([
+  const [orders, enquiries, counts, unhandledCount, images, prices, exchangeRate, kinds, sizes, descriptions, homeItems] = await Promise.all([
     tab === "orders"
       ? prisma.order
           .findMany({
@@ -107,10 +121,38 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
           return null;
         })
       : Promise.resolve(null),
+    tab === "products"
+      ? prisma.productKindOverride.findMany().catch((e) => {
+          logErr("kinds", e);
+          return [];
+        })
+      : Promise.resolve([]),
+    tab === "products"
+      ? prisma.productSize.findMany({ orderBy: { updatedAt: "asc" } }).catch((e) => {
+          logErr("sizes", e);
+          return [];
+        })
+      : Promise.resolve([]),
+    tab === "products"
+      ? prisma.productDescriptionOverride.findMany().catch((e) => {
+          logErr("descriptions", e);
+          return [];
+        })
+      : Promise.resolve([]),
+    tab === "products"
+      ? prisma.homeSectionItem.findMany().catch((e) => {
+          logErr("home-sections", e);
+          return [];
+        })
+      : Promise.resolve([]),
   ]);
   const countOf = (s: string) => counts.find((c) => c.status === s)?._count ?? 0;
   const imageOverrideOf = (slug: string) => images.find((i) => i.slug === slug);
   const priceOverrideOf = (slug: string) => prices.find((i) => i.slug === slug);
+  const kindOf = (slug: string) => kinds.find((k) => k.slug === slug)?.kind ?? "ART_FRAME";
+  const sizesOf = (slug: string) => sizes.filter((s) => s.slug === slug);
+  const descriptionOverrideOf = (slug: string) => descriptions.find((d) => d.slug === slug);
+  const homeSectionsOf = (slug: string) => homeItems.filter((h) => h.slug === slug);
 
   return (
     <section className="container-kk py-10">
@@ -259,6 +301,11 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
             const priceOverride = priceOverrideOf(p.slug);
             const src = imageOverride ? `/img/${p.slug}?v=${imageOverride.updatedAt.getTime()}` : `/img/${p.slug}`;
             const currentPriceCents = priceOverride?.priceCents ?? p.priceCents;
+            const kind = kindOf(p.slug);
+            const productSizes = sizesOf(p.slug);
+            const descriptionOverride = descriptionOverrideOf(p.slug);
+            const currentDescription = descriptionOverride ? descriptionOverride.description : p.description;
+            const productHomeItems = homeSectionsOf(p.slug);
             return (
               <li key={p.slug} className="card space-y-3 p-4">
                 <div className="relative aspect-square overflow-hidden rounded-xl bg-shankh-dark">
@@ -290,6 +337,89 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
                       <button className="text-xs font-bold text-sindoor hover:underline">Revert to original price</button>
                     </form>
                   )}
+                </div>
+
+                <div className="border-t border-ink/10 pt-3">
+                  <p className="text-xs font-bold text-ink-soft">Kind</p>
+                  <form action={updateProductKind} className="mt-2 flex items-center gap-2">
+                    <input type="hidden" name="slug" value={p.slug} />
+                    <select name="kind" defaultValue={kind} className="field h-9 w-auto py-1 text-xs">
+                      <option value="ART_FRAME">Art Frame</option>
+                      <option value="HOME_DECOR">Home Decor</option>
+                    </select>
+                    <button type="submit" className="btn-outline h-9 px-3 text-xs">Save</button>
+                  </form>
+                </div>
+
+                {kind === "ART_FRAME" && (
+                  <div className="border-t border-ink/10 pt-3">
+                    <p className="text-xs font-bold text-ink-soft">Sizes</p>
+                    {productSizes.length > 0 && (
+                      <ul className="mt-2 space-y-1">
+                        {productSizes.map((s) => (
+                          <li key={s.label} className="flex items-center justify-between gap-2 text-xs">
+                            <span>{s.label} — {formatMoney(s.priceCents)}</span>
+                            <form action={removeProductSize}>
+                              <input type="hidden" name="slug" value={p.slug} />
+                              <input type="hidden" name="label" value={s.label} />
+                              <button className="font-bold text-sindoor hover:underline">Remove</button>
+                            </form>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <div className="mt-2">
+                      <SizeAddForm slug={p.slug} />
+                    </div>
+                  </div>
+                )}
+
+                <div className="border-t border-ink/10 pt-3">
+                  <p className="text-xs font-bold text-ink-soft">
+                    Description{descriptionOverride ? " (custom)" : ""}
+                  </p>
+                  <div className="mt-2">
+                    <DescriptionEditForm slug={p.slug} description={currentDescription} />
+                  </div>
+                  {descriptionOverride && (
+                    <form action={removeProductDescription} className="mt-2">
+                      <input type="hidden" name="slug" value={p.slug} />
+                      <button className="text-xs font-bold text-sindoor hover:underline">Reset to default description</button>
+                    </form>
+                  )}
+                </div>
+
+                <div className="border-t border-ink/10 pt-3">
+                  <p className="text-xs font-bold text-ink-soft">Home page sections</p>
+                  <p className="mt-1 text-[11px] text-ink-soft">
+                    Unchecked for every product in a section = that section falls back to the site's built-in defaults.
+                  </p>
+                  <form action={updateHomeSections} className="mt-2 space-y-1.5">
+                    <input type="hidden" name="slug" value={p.slug} />
+                    {HOME_SECTIONS.map((section) => {
+                      const item = productHomeItems.find((h) => h.section === section);
+                      return (
+                        <div key={section} className="flex items-center gap-2 text-xs">
+                          <input
+                            type="checkbox"
+                            id={`${p.slug}-${section}`}
+                            name={`section_${section}`}
+                            defaultChecked={Boolean(item)}
+                            className="h-4 w-4"
+                          />
+                          <label htmlFor={`${p.slug}-${section}`} className="flex-1">{HOME_SECTION_LABEL[section]}</label>
+                          <span className="text-ink-soft">Order</span>
+                          <input
+                            type="number"
+                            name={`order_${section}`}
+                            defaultValue={item?.position ?? 0}
+                            className="field h-7 w-14 py-0.5 text-xs"
+                          />
+                        </div>
+                      );
+                    })}
+                    <button type="submit" className="btn-outline h-9 px-3 text-xs">Save</button>
+                  </form>
                 </div>
               </li>
             );

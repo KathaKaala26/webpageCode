@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { ADMIN_COOKIE, adminCookieOptions, isAdmin, makeToken, passwordMatches } from "@/lib/admin";
 import { getProduct } from "@/lib/products";
+import { HOME_SECTIONS } from "@/lib/home";
 import { PRODUCT_IMAGES_BUCKET, supabaseAdmin } from "@/lib/supabaseAdmin";
 
 const STATUSES = ["PENDING_PAYMENT", "PAID", "COD_PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"] as const;
@@ -120,6 +121,99 @@ export async function removeAllProductPrices() {
   if (!(await isAdmin())) redirect("/admin");
   await prisma.productPrice.deleteMany({});
   revalidatePath("/", "layout");
+}
+
+const PRODUCT_KINDS = ["ART_FRAME", "HOME_DECOR"] as const;
+
+export async function updateProductKind(fd: FormData) {
+  if (!(await isAdmin())) redirect("/admin");
+  const slug = String(fd.get("slug") ?? "");
+  const kind = String(fd.get("kind") ?? "");
+  if (!getProduct(slug) || !PRODUCT_KINDS.includes(kind as (typeof PRODUCT_KINDS)[number])) return;
+  await prisma.productKindOverride.upsert({
+    where: { slug },
+    create: { slug, kind: kind as (typeof PRODUCT_KINDS)[number] },
+    update: { kind: kind as (typeof PRODUCT_KINDS)[number] },
+  });
+  revalidateCatalog(slug);
+}
+
+export async function addProductSize(_prev: { error?: string } | undefined, fd: FormData): Promise<{ error?: string }> {
+  if (!(await isAdmin())) redirect("/admin");
+  const slug = String(fd.get("slug") ?? "");
+  const product = getProduct(slug);
+  if (!product) return { error: "Unknown product." };
+
+  const label = String(fd.get("label") ?? "").trim();
+  if (!label) return { error: "Enter a size label." };
+
+  const dollars = Number(String(fd.get("price") ?? "").trim());
+  if (!Number.isFinite(dollars) || dollars <= 0) return { error: "Enter a valid price." };
+  const priceCents = Math.round(dollars * 100);
+
+  try {
+    await prisma.productSize.create({ data: { slug, label, priceCents } });
+  } catch {
+    return { error: `A size called "${label}" already exists for this product.` };
+  }
+  revalidateCatalog(slug);
+  return {};
+}
+
+export async function removeProductSize(fd: FormData) {
+  if (!(await isAdmin())) redirect("/admin");
+  const slug = String(fd.get("slug") ?? "");
+  const label = String(fd.get("label") ?? "");
+  if (!slug || !label) return;
+  await prisma.productSize.deleteMany({ where: { slug, label } });
+  revalidateCatalog(slug);
+}
+
+export async function updateProductDescription(_prev: { error?: string } | undefined, fd: FormData): Promise<{ error?: string }> {
+  if (!(await isAdmin())) redirect("/admin");
+  const slug = String(fd.get("slug") ?? "");
+  if (!getProduct(slug)) return { error: "Unknown product." };
+
+  const description = String(fd.get("description") ?? "").trim();
+  await prisma.productDescriptionOverride.upsert({
+    where: { slug },
+    create: { slug, description },
+    update: { description },
+  });
+  revalidateCatalog(slug);
+  return {};
+}
+
+export async function removeProductDescription(fd: FormData) {
+  if (!(await isAdmin())) redirect("/admin");
+  const slug = String(fd.get("slug") ?? "");
+  if (!slug) return;
+  await prisma.productDescriptionOverride.deleteMany({ where: { slug } });
+  revalidateCatalog(slug);
+}
+
+export async function updateHomeSections(fd: FormData) {
+  if (!(await isAdmin())) redirect("/admin");
+  const slug = String(fd.get("slug") ?? "");
+  if (!getProduct(slug)) return;
+
+  await Promise.all(
+    HOME_SECTIONS.map(async (section) => {
+      const checked = fd.get(`section_${section}`) === "on";
+      if (!checked) {
+        await prisma.homeSectionItem.deleteMany({ where: { slug, section } });
+        return;
+      }
+      const position = Math.round(Number(String(fd.get(`order_${section}`) ?? "0").trim())) || 0;
+      await prisma.homeSectionItem.upsert({
+        where: { slug_section: { slug, section } },
+        create: { slug, section, position },
+        update: { position },
+      });
+    })
+  );
+  revalidatePath("/admin");
+  revalidatePath("/");
 }
 
 export async function updateExchangeRate(_prev: { error?: string } | undefined, fd: FormData): Promise<{ error?: string }> {

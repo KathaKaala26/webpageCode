@@ -86,6 +86,64 @@ model ProductPrice {
   updatedAt  DateTime @updatedAt
 }
 
+enum ProductKind {
+  ART_FRAME
+  HOME_DECOR
+}
+
+// Admin-set classification (keyed by products.ts slug). Absent = ART_FRAME
+// (today's default — no behavior changes until an admin flips a product to
+// HOME_DECOR or adds sizes).
+model ProductKindOverride {
+  slug      String      @id
+  kind      ProductKind
+  updatedAt DateTime    @updatedAt
+}
+
+// Admin-added size options for Art Frame products. A product with no rows
+// here shows its normal single price (no selector). Rows are kept even if
+// the product is later flipped to HOME_DECOR (just not rendered), so no
+// data is lost by toggling kind back and forth.
+model ProductSize {
+  id         String   @id @default(cuid())
+  slug       String
+  label      String
+  priceCents Int
+  updatedAt  DateTime @updatedAt
+
+  @@unique([slug, label])
+  @@index([slug])
+}
+
+// Admin-set replacement description (keyed by slug). Absent = static
+// description from products.ts. An explicit empty string is a deliberate
+// "blank this description" — distinct from "no override row".
+model ProductDescriptionOverride {
+  slug        String   @id
+  description String
+  updatedAt   DateTime @updatedAt
+}
+
+enum HomeSection {
+  GALLERY
+  PALM_LEAF
+  COLORFUL
+  ADDITIONAL
+}
+
+// Admin-controlled Home page section membership + order. No rows for a
+// section = fall back to the site's hardcoded defaults, so the Home page
+// never renders an empty section before an admin configures anything.
+model HomeSectionItem {
+  slug      String
+  section   HomeSection
+  position  Int         @default(0)
+  updatedAt DateTime    @updatedAt
+
+  @@id([slug, section])
+  @@index([section])
+}
+
 // Admin-set USD -> GBP conversion rate used to charge UK orders in GBP at
 // checkout. Singleton row (id always 1).
 model ExchangeRate {

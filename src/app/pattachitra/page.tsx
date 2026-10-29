@@ -52,9 +52,9 @@ export default async function PattachitraPage() {
             <section key={s.heading} className="grid items-center gap-8 lg:grid-cols-2 lg:gap-16">
               <Link
                 href={`/shop/${p.slug}`}
-                className={`relative block aspect-[622/512] overflow-hidden rounded-3xl shadow-card ${flip ? "lg:order-2" : ""}`}
+                className={`relative block aspect-[622/512] overflow-hidden rounded-3xl bg-shankh-dark shadow-card ${flip ? "lg:order-2" : ""}`}
               >
-                <Image src={p.image} alt={s.heading} fill sizes="(min-width:1024px) 45vw, 92vw" className="object-cover transition duration-500 hover:scale-[1.03]" />
+                <Image src={p.image} alt={s.heading} fill sizes="(min-width:1024px) 45vw, 92vw" className="object-contain transition duration-500 hover:scale-[1.03]" />
               </Link>
               <div>
                 <p className="eyebrow">{p.purchaseCode}</p>

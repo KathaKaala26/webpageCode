@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { nav, site } from "@/lib/site";
-import { InstagramIcon, KKMark } from "./Icons";
+import { FacebookIcon, InstagramIcon, KKMark } from "./Icons";
 import InstallButton from "./InstallButton";
 
 export default function Footer() {
@@ -27,6 +27,15 @@ export default function Footer() {
               className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/20 text-shankh/80 transition hover:border-haldi-light hover:text-haldi-light"
             >
               <InstagramIcon className="h-5 w-5" />
+            </a>
+            <a
+              href="https://www.facebook.com/share/1E9cnFDEPt/?mibextid=wwXIfr"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Katha & Kaala on Facebook"
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/20 text-shankh/80 transition hover:border-haldi-light hover:text-haldi-light"
+            >
+              <FacebookIcon className="h-5 w-5" />
             </a>
           </div>
         </div>

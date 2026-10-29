@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { sendEnquiryNotification } from "@/lib/mailer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,9 +33,16 @@ export async function POST(req: Request) {
 
   try {
     await prisma.enquiry.create({ data: { name, email, message, page } });
-    return NextResponse.json({ ok: true });
   } catch (e) {
     console.error("[enquiry]", e);
     return NextResponse.json({ error: "Couldn't send right now. Please try again." }, { status: 500 });
   }
+
+  try {
+    await sendEnquiryNotification({ name, email, message, page });
+  } catch (e) {
+    console.error("[enquiry:email]", e);
+  }
+
+  return NextResponse.json({ ok: true });
 }
