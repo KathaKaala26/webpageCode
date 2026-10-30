@@ -59,7 +59,9 @@ export async function POST(req: Request) {
         currency: chargeCurrency,
         unit_amount: l.product.priceCents,
         product_data: {
-          name: `${l.product.title}`,
+          // Stripe rejects an empty product name — admins can blank a title
+          // for display, but checkout still needs something non-empty.
+          name: l.product.title || l.product.purchaseCode,
           description: `Purchase code ${l.product.purchaseCode}`,
           images: [base + l.product.image],
         },

@@ -12,6 +12,7 @@ import PriceEditForm from "./PriceEditForm";
 import ExchangeRateForm from "./ExchangeRateForm";
 import SizeAddForm from "./SizeAddForm";
 import DescriptionEditForm from "./DescriptionEditForm";
+import TitleEditForm from "./TitleEditForm";
 import {
   logout,
   removeAllProductPrices,
@@ -19,6 +20,7 @@ import {
   removeProductImage,
   removeProductPrice,
   removeProductSize,
+  removeProductTitle,
   toggleEnquiry,
   updateHomeSections,
   updateOrderStatus,
@@ -72,7 +74,7 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
     errors.push(label);
   };
 
-  const [orders, enquiries, counts, unhandledCount, images, prices, exchangeRate, kinds, sizes, descriptions, homeItems, availabilityRows] = await Promise.all([
+  const [orders, enquiries, counts, unhandledCount, images, prices, exchangeRate, kinds, sizes, descriptions, homeItems, availabilityRows, titleRows] = await Promise.all([
     tab === "orders"
       ? prisma.order
           .findMany({
@@ -152,6 +154,12 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
           return [];
         })
       : Promise.resolve([]),
+    tab === "products"
+      ? prisma.productTitleOverride.findMany().catch((e) => {
+          logErr("titles", e);
+          return [];
+        })
+      : Promise.resolve([]),
   ]);
   const countOf = (s: string) => counts.find((c) => c.status === s)?._count ?? 0;
   const imageOverrideOf = (slug: string) => images.find((i) => i.slug === slug);
@@ -161,6 +169,7 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
   const descriptionOverrideOf = (slug: string) => descriptions.find((d) => d.slug === slug);
   const homeSectionsOf = (slug: string) => homeItems.filter((h) => h.slug === slug);
   const availabilityOf = (slug: string, fallback: boolean) => availabilityRows.find((a) => a.slug === slug)?.available ?? fallback;
+  const titleOverrideOf = (slug: string) => titleRows.find((t) => t.slug === slug);
 
   return (
     <section className="container-kk py-10">
@@ -315,6 +324,8 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
             const currentDescription = descriptionOverride ? descriptionOverride.description : p.description;
             const productHomeItems = homeSectionsOf(p.slug);
             const available = availabilityOf(p.slug, p.available);
+            const titleOverride = titleOverrideOf(p.slug);
+            const currentTitle = titleOverride ? titleOverride.title : p.title;
             return (
               <li key={p.slug} className="card space-y-3 p-4">
                 <div className="relative aspect-square overflow-hidden rounded-xl bg-shankh-dark">
@@ -325,6 +336,22 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
                   <p className="text-sm font-bold">{p.title}</p>
                   <p className="text-xs text-ink-soft">{p.purchaseCode} · {imageOverride ? "Custom image" : "Original image"}</p>
                 </div>
+
+                <div className="border-t border-ink/10 pt-3">
+                  <p className="text-xs font-bold text-ink-soft">
+                    Title{titleOverride ? (currentTitle ? " (custom)" : " (hidden)") : ""}
+                  </p>
+                  <div className="mt-2">
+                    <TitleEditForm slug={p.slug} title={currentTitle} />
+                  </div>
+                  {titleOverride && (
+                    <form action={removeProductTitle} className="mt-2">
+                      <input type="hidden" name="slug" value={p.slug} />
+                      <button className="text-xs font-bold text-sindoor hover:underline">Revert to original title</button>
+                    </form>
+                  )}
+                </div>
+
                 <ImageUploadForm slug={p.slug} />
                 {imageOverride && (
                   <form action={removeProductImage}>

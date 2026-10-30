@@ -123,6 +123,16 @@ model ProductSize {
   @@index([slug])
 }
 
+// Admin-set replacement title (keyed by slug). Absent = static title from
+// products.ts. An explicit empty string is a deliberate "remove the title"
+// (the title still exists internally for URLs/order records, it's just not
+// displayed).
+model ProductTitleOverride {
+  slug      String   @id
+  title     String
+  updatedAt DateTime @updatedAt
+}
+
 // Admin-set replacement description (keyed by slug). Absent = static
 // description from products.ts. An explicit empty string is a deliberate
 // "blank this description" — distinct from "no override row".

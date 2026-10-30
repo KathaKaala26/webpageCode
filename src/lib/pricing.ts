@@ -47,14 +47,21 @@ async function descriptionOverrides(): Promise<Map<string, string>> {
   return new Map(rows.map((r) => [r.slug, r.description]));
 }
 
+/** slug -> admin-set title override (empty string means "intentionally blank"). */
+async function titleOverrides(): Promise<Map<string, string>> {
+  const rows = await prisma.productTitleOverride.findMany();
+  return new Map(rows.map((r) => [r.slug, r.title]));
+}
+
 /** The full catalogue with all admin overrides applied. */
 export async function pricedProducts(): Promise<CatalogProduct[]> {
-  const [prices, kinds, sizes, descriptions, availability] = await Promise.all([
+  const [prices, kinds, sizes, descriptions, availability, titles] = await Promise.all([
     priceOverrides(),
     kindOverrides(),
     sizesBySlug(),
     descriptionOverrides(),
     availabilityOverrides(),
+    titleOverrides(),
   ]);
   return baseProducts.map((p) => ({
     ...p,
@@ -63,6 +70,7 @@ export async function pricedProducts(): Promise<CatalogProduct[]> {
     kind: kinds.get(p.slug) ?? "ART_FRAME",
     sizes: sizes.get(p.slug) ?? [],
     available: availability.get(p.slug) ?? p.available,
+    title: titles.has(p.slug) ? titles.get(p.slug)! : p.title,
   }));
 }
 
@@ -70,12 +78,13 @@ export async function pricedProducts(): Promise<CatalogProduct[]> {
 export async function pricedProduct(slug: string): Promise<CatalogProduct | undefined> {
   const p = baseProducts.find((x) => x.slug === slug);
   if (!p) return undefined;
-  const [price, kind, sizeRows, description, availability] = await Promise.all([
+  const [price, kind, sizeRows, description, availability, title] = await Promise.all([
     prisma.productPrice.findUnique({ where: { slug } }),
     prisma.productKindOverride.findUnique({ where: { slug } }),
     prisma.productSize.findMany({ where: { slug }, orderBy: { updatedAt: "asc" } }),
     prisma.productDescriptionOverride.findUnique({ where: { slug } }),
     prisma.productAvailabilityOverride.findUnique({ where: { slug } }),
+    prisma.productTitleOverride.findUnique({ where: { slug } }),
   ]);
   return {
     ...p,
@@ -84,5 +93,6 @@ export async function pricedProduct(slug: string): Promise<CatalogProduct | unde
     kind: kind?.kind ?? "ART_FRAME",
     sizes: sizeRows.map((r) => ({ label: r.label, priceCents: r.priceCents })),
     available: availability?.available ?? p.available,
+    title: title ? title.title : p.title,
   };
 }

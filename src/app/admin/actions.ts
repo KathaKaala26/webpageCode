@@ -205,6 +205,29 @@ export async function removeProductDescription(fd: FormData) {
   revalidateCatalog(slug);
 }
 
+export async function updateProductTitle(_prev: { error?: string } | undefined, fd: FormData): Promise<{ error?: string }> {
+  if (!(await isAdmin())) redirect("/admin");
+  const slug = String(fd.get("slug") ?? "");
+  if (!getProduct(slug)) return { error: "Unknown product." };
+
+  const title = String(fd.get("title") ?? "").trim();
+  await prisma.productTitleOverride.upsert({
+    where: { slug },
+    create: { slug, title },
+    update: { title },
+  });
+  revalidateCatalog(slug);
+  return {};
+}
+
+export async function removeProductTitle(fd: FormData) {
+  if (!(await isAdmin())) redirect("/admin");
+  const slug = String(fd.get("slug") ?? "");
+  if (!slug) return;
+  await prisma.productTitleOverride.deleteMany({ where: { slug } });
+  revalidateCatalog(slug);
+}
+
 export async function updateHomeSections(fd: FormData) {
   if (!(await isAdmin())) redirect("/admin");
   const slug = String(fd.get("slug") ?? "");
