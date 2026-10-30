@@ -9,7 +9,12 @@ type Params = { params: Promise<{ slug: string }> };
 export async function GET(_req: Request, { params }: Params) {
   const { slug } = await params;
   const override = await prisma.productImage.findUnique({ where: { slug } });
-  const url = override?.url ?? defaultProductImage(slug);
+  let url = override?.url ?? defaultProductImage(slug);
+  if (!url) {
+    // Not a static catalogue slug — check the admin-created Product table.
+    const created = await prisma.product.findUnique({ where: { slug }, select: { image: true } });
+    url = created?.image;
+  }
   if (!url) return new NextResponse("Not found", { status: 404 });
 
   const upstream = await fetch(url, { cache: "no-store" });

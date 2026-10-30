@@ -1,8 +1,7 @@
 import { randomBytes } from "crypto";
-import { getProduct, type Product } from "./products";
 import { commerce } from "./site";
 import { shippingFor } from "./format";
-import { priceOverrides } from "./pricing";
+import { pricedProduct, type CatalogProduct } from "./pricing";
 
 export type CheckoutItemInput = { slug: string; quantity: number };
 
@@ -19,7 +18,7 @@ export type CustomerInput = {
   notes?: string;
 };
 
-export type PricedLine = { product: Product; quantity: number; lineCents: number };
+export type PricedLine = { product: CatalogProduct; quantity: number; lineCents: number };
 
 export type PricedOrder = {
   lines: PricedLine[];
@@ -69,13 +68,11 @@ export async function priceItems(raw: unknown, paymentMethod: "STRIPE" | "COD"):
     if (!slug || !Number.isFinite(q) || q < 1) continue;
     merged.set(slug, Math.min((merged.get(slug) ?? 0) + q, commerce.maxQtyPerItem));
   }
-  const overrides = await priceOverrides();
   const lines: PricedLine[] = [];
   for (const [slug, quantity] of merged) {
-    const raw = getProduct(slug);
-    if (!raw) throw new CheckoutError("An item in your cart is no longer available.");
-    if (!raw.available) throw new CheckoutError(`"${raw.title}" has just sold out.`);
-    const product = overrides.has(slug) ? { ...raw, priceCents: overrides.get(slug)! } : raw;
+    const product = await pricedProduct(slug);
+    if (!product) throw new CheckoutError("An item in your cart is no longer available.");
+    if (!product.available) throw new CheckoutError(`"${product.title}" has just sold out.`);
     lines.push({ product, quantity, lineCents: product.priceCents * quantity });
   }
   if (!lines.length) throw new CheckoutError("Your cart is empty.");

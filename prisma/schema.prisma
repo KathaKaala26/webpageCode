@@ -69,6 +69,33 @@ model OrderItem {
   quantity       Int
 }
 
+enum ProductSection {
+  SHOP
+  PUJA_ESSENTIALS
+  BOOKS
+}
+
+// Admin-created catalog product — distinct from the hardcoded rawProducts
+// array in src/lib/products.ts. Merged into the catalogue by
+// src/lib/pricing.ts, and once merged every existing per-field override
+// table below (title/price/description/availability/kind/sizes/image)
+// applies to it exactly as it does to static products.
+model Product {
+  slug         String         @id
+  purchaseCode String         @unique
+  title        String
+  category     String
+  section      ProductSection @default(SHOP)
+  image        String
+  priceCents   Int
+  description  String         @default("")
+  available    Boolean        @default(true)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@index([section])
+}
+
 // Admin-uploaded replacement image for a product (keyed by products.ts slug).
 // When absent, the product's original image (from products.ts) is used.
 model ProductImage {

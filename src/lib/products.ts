@@ -29,7 +29,10 @@ export type Product = {
   purchaseCode: string;
   codeFromSite: boolean;
   title: string;
-  category: Category;
+  // Static catalogue entries are always one of the Category union values,
+  // but admin-created products (see Product in prisma/schema.prisma) can use
+  // any free-text category — so the field itself is the wider `string`.
+  category: string;
   image: string;
   priceCents: number;
   description: string;
@@ -37,6 +40,8 @@ export type Product = {
   featured?: boolean;
   /** false = Home page only, hidden from /shop, the sitemap, and chatbot results. Default true. */
   showInShop?: boolean;
+  /** Which top-level page this belongs to. Undefined (all static entries) means "SHOP". */
+  section?: "SHOP" | "PUJA_ESSENTIALS" | "BOOKS";
 };
 
 /** Strips a baked-in " — CODE" suffix from a title for display contexts that hide the purchase code. */

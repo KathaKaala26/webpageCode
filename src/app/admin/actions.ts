@@ -1,13 +1,16 @@
 "use server";
 
+import { randomBytes } from "crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { ADMIN_COOKIE, adminCookieOptions, isAdmin, makeToken, passwordMatches } from "@/lib/admin";
-import { getProduct } from "@/lib/products";
+import { baseCatalog, productExists } from "@/lib/pricing";
 import { HOME_SECTIONS } from "@/lib/home";
 import { PRODUCT_IMAGES_BUCKET, supabaseAdmin } from "@/lib/supabaseAdmin";
+
+const PRODUCT_SECTIONS = ["SHOP", "PUJA_ESSENTIALS", "BOOKS"] as const;
 
 const STATUSES = ["PENDING_PAYMENT", "PAID", "COD_PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"] as const;
 type Status = (typeof STATUSES)[number];
@@ -48,6 +51,7 @@ function revalidateCatalog(slug: string) {
   revalidatePath("/shop");
   revalidatePath(`/shop/${slug}`);
   revalidatePath("/puja-essentials");
+  revalidatePath("/books");
   revalidatePath("/");
 }
 
@@ -59,7 +63,7 @@ export async function uploadProductImage(_prev: { error?: string } | undefined, 
 
   const slug = String(fd.get("slug") ?? "");
   const file = fd.get("file");
-  if (!getProduct(slug)) return { error: "Unknown product." };
+  if (!(await productExists(slug))) return { error: "Unknown product." };
   if (!(file instanceof File) || file.size === 0) return { error: "Choose an image file first." };
   if (!IMAGE_TYPES.includes(file.type)) return { error: "Use a JPEG, PNG, WebP or AVIF image." };
   if (file.size > MAX_IMAGE_BYTES) return { error: "Image must be under 5MB." };
@@ -92,8 +96,7 @@ export async function removeProductImage(fd: FormData) {
 export async function updateProductPrice(_prev: { error?: string } | undefined, fd: FormData): Promise<{ error?: string }> {
   if (!(await isAdmin())) redirect("/admin");
   const slug = String(fd.get("slug") ?? "");
-  const product = getProduct(slug);
-  if (!product) return { error: "Unknown product." };
+  if (!(await productExists(slug))) return { error: "Unknown product." };
 
   const dollars = Number(String(fd.get("price") ?? "").trim());
   if (!Number.isFinite(dollars) || dollars <= 0) return { error: "Enter a valid price." };
@@ -129,7 +132,7 @@ export async function updateProductKind(fd: FormData) {
   if (!(await isAdmin())) redirect("/admin");
   const slug = String(fd.get("slug") ?? "");
   const kind = String(fd.get("kind") ?? "");
-  if (!getProduct(slug) || !PRODUCT_KINDS.includes(kind as (typeof PRODUCT_KINDS)[number])) return;
+  if (!PRODUCT_KINDS.includes(kind as (typeof PRODUCT_KINDS)[number]) || !(await productExists(slug))) return;
   await prisma.productKindOverride.upsert({
     where: { slug },
     create: { slug, kind: kind as (typeof PRODUCT_KINDS)[number] },
@@ -142,7 +145,7 @@ export async function updateProductAvailability(fd: FormData) {
   if (!(await isAdmin())) redirect("/admin");
   const slug = String(fd.get("slug") ?? "");
   const available = fd.get("available") === "true";
-  if (!getProduct(slug)) return;
+  if (!(await productExists(slug))) return;
   await prisma.productAvailabilityOverride.upsert({
     where: { slug },
     create: { slug, available },
@@ -154,8 +157,7 @@ export async function updateProductAvailability(fd: FormData) {
 export async function addProductSize(_prev: { error?: string } | undefined, fd: FormData): Promise<{ error?: string }> {
   if (!(await isAdmin())) redirect("/admin");
   const slug = String(fd.get("slug") ?? "");
-  const product = getProduct(slug);
-  if (!product) return { error: "Unknown product." };
+  if (!(await productExists(slug))) return { error: "Unknown product." };
 
   const label = String(fd.get("label") ?? "").trim();
   if (!label) return { error: "Enter a size label." };
@@ -185,7 +187,7 @@ export async function removeProductSize(fd: FormData) {
 export async function updateProductDescription(_prev: { error?: string } | undefined, fd: FormData): Promise<{ error?: string }> {
   if (!(await isAdmin())) redirect("/admin");
   const slug = String(fd.get("slug") ?? "");
-  if (!getProduct(slug)) return { error: "Unknown product." };
+  if (!(await productExists(slug))) return { error: "Unknown product." };
 
   const description = String(fd.get("description") ?? "").trim();
   await prisma.productDescriptionOverride.upsert({
@@ -208,7 +210,7 @@ export async function removeProductDescription(fd: FormData) {
 export async function updateProductTitle(_prev: { error?: string } | undefined, fd: FormData): Promise<{ error?: string }> {
   if (!(await isAdmin())) redirect("/admin");
   const slug = String(fd.get("slug") ?? "");
-  if (!getProduct(slug)) return { error: "Unknown product." };
+  if (!(await productExists(slug))) return { error: "Unknown product." };
 
   const title = String(fd.get("title") ?? "").trim();
   await prisma.productTitleOverride.upsert({
@@ -231,7 +233,7 @@ export async function removeProductTitle(fd: FormData) {
 export async function updateHomeSections(fd: FormData) {
   if (!(await isAdmin())) redirect("/admin");
   const slug = String(fd.get("slug") ?? "");
-  if (!getProduct(slug)) return;
+  if (!(await productExists(slug))) return;
 
   await Promise.all(
     HOME_SECTIONS.map(async (section) => {
@@ -250,6 +252,64 @@ export async function updateHomeSections(fd: FormData) {
   );
   revalidatePath("/admin");
   revalidatePath("/");
+}
+
+function slugify(title: string): string {
+  return title
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "product";
+}
+
+export async function createProduct(_prev: { error?: string } | undefined, fd: FormData): Promise<{ error?: string }> {
+  if (!(await isAdmin())) redirect("/admin");
+
+  const title = String(fd.get("title") ?? "").trim();
+  const category = String(fd.get("category") ?? "").trim();
+  const section = String(fd.get("section") ?? "");
+  const dollars = Number(String(fd.get("price") ?? "").trim());
+  const file = fd.get("file");
+
+  if (!title) return { error: "Enter a title." };
+  if (!category) return { error: "Enter a category." };
+  if (!PRODUCT_SECTIONS.includes(section as (typeof PRODUCT_SECTIONS)[number])) return { error: "Choose a section." };
+  if (!Number.isFinite(dollars) || dollars <= 0) return { error: "Enter a valid price." };
+  if (!(file instanceof File) || file.size === 0) return { error: "Choose an image file first." };
+  if (!IMAGE_TYPES.includes(file.type)) return { error: "Use a JPEG, PNG, WebP or AVIF image." };
+  if (file.size > MAX_IMAGE_BYTES) return { error: "Image must be under 5MB." };
+
+  const existing = new Set((await baseCatalog()).map((p) => p.slug));
+  const base = slugify(title);
+  let slug = base;
+  let n = 2;
+  while (existing.has(slug)) {
+    slug = `${base}-${n}`;
+    n++;
+  }
+  const purchaseCode = `KK-${randomBytes(3).toString("hex").toUpperCase()}`;
+
+  const ext = file.type.split("/")[1];
+  const path = `${slug}/${Date.now()}.${ext}`;
+  const supabase = supabaseAdmin();
+  const { error: uploadError } = await supabase.storage.from(PRODUCT_IMAGES_BUCKET).upload(path, file, { contentType: file.type });
+  if (uploadError) return { error: `Upload failed: ${uploadError.message}` };
+  const { data } = supabase.storage.from(PRODUCT_IMAGES_BUCKET).getPublicUrl(path);
+
+  await prisma.product.create({
+    data: {
+      slug,
+      purchaseCode,
+      title,
+      category,
+      section: section as (typeof PRODUCT_SECTIONS)[number],
+      image: data.publicUrl,
+      priceCents: Math.round(dollars * 100),
+    },
+  });
+
+  revalidateCatalog(slug);
+  return {};
 }
 
 export async function updateExchangeRate(_prev: { error?: string } | undefined, fd: FormData): Promise<{ error?: string }> {

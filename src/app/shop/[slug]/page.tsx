@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getProduct, products } from "@/lib/products";
-import { pricedProducts } from "@/lib/pricing";
+import { products } from "@/lib/products";
+import { pricedProduct, pricedProducts } from "@/lib/pricing";
 import { formatMoney } from "@/lib/format";
 import { commerce } from "@/lib/site";
 import { siteUrl } from "@/lib/stripe";
@@ -22,7 +22,7 @@ export function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
-  const p = getProduct((await params).slug);
+  const p = await pricedProduct((await params).slug);
   if (!p) return {};
   return {
     title: `${p.title} (${p.purchaseCode})`,

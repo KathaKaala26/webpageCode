@@ -4,6 +4,7 @@ import { isAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 import { formatMoney } from "@/lib/format";
 import { products } from "@/lib/products";
+import { baseCatalog } from "@/lib/pricing";
 import { DEFAULT_USD_TO_GBP } from "@/lib/currency";
 import { HOME_SECTIONS, HOME_SECTION_LABEL } from "@/lib/home";
 import LoginForm from "./LoginForm";
@@ -13,6 +14,7 @@ import ExchangeRateForm from "./ExchangeRateForm";
 import SizeAddForm from "./SizeAddForm";
 import DescriptionEditForm from "./DescriptionEditForm";
 import TitleEditForm from "./TitleEditForm";
+import CreateProductForm from "./CreateProductForm";
 import {
   logout,
   removeAllProductPrices,
@@ -74,7 +76,7 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
     errors.push(label);
   };
 
-  const [orders, enquiries, counts, unhandledCount, images, prices, exchangeRate, kinds, sizes, descriptions, homeItems, availabilityRows, titleRows] = await Promise.all([
+  const [orders, enquiries, counts, unhandledCount, images, prices, exchangeRate, kinds, sizes, descriptions, homeItems, availabilityRows, titleRows, catalog] = await Promise.all([
     tab === "orders"
       ? prisma.order
           .findMany({
@@ -160,6 +162,12 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
           return [];
         })
       : Promise.resolve([]),
+    tab === "products"
+      ? baseCatalog().catch((e) => {
+          logErr("catalog", e);
+          return products;
+        })
+      : Promise.resolve(products),
   ]);
   const countOf = (s: string) => counts.find((c) => c.status === s)?._count ?? 0;
   const imageOverrideOf = (slug: string) => images.find((i) => i.slug === slug);
@@ -295,6 +303,16 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
       {tab === "products" && (
         <>
           <div className="card mt-6 p-4">
+            <p className="text-sm font-bold text-maroon">Create a new product</p>
+            <p className="mt-1 text-xs text-ink-soft">
+              Adds a brand-new catalogue item — pick a section to put it on Shop, Puja Essentials, or Books.
+            </p>
+            <div className="mt-3">
+              <CreateProductForm categories={Array.from(new Set(catalog.map((p) => p.category)))} />
+            </div>
+          </div>
+
+          <div className="card mt-6 p-4">
             <p className="text-sm font-bold text-maroon">UK checkout exchange rate</p>
             <p className="mt-1 text-xs text-ink-soft">Used to convert USD catalogue prices to GBP for United Kingdom orders at checkout.</p>
             <div className="mt-2">
@@ -313,7 +331,7 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
             </div>
           )}
         <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {products.map((p) => {
+          {catalog.map((p) => {
             const imageOverride = imageOverrideOf(p.slug);
             const priceOverride = priceOverrideOf(p.slug);
             const src = imageOverride ? `/img/${p.slug}?v=${imageOverride.updatedAt.getTime()}` : `/img/${p.slug}`;

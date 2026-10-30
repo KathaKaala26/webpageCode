@@ -1,5 +1,49 @@
 import { prisma } from "./prisma";
-import { products as baseProducts, type Product } from "./products";
+import { products as baseProducts, getProduct as getStaticProduct, type Product } from "./products";
+
+/** Converts an admin-created DB Product row into the shared Product shape. */
+function fromDbRow(r: {
+  slug: string;
+  purchaseCode: string;
+  title: string;
+  category: string;
+  section: "SHOP" | "PUJA_ESSENTIALS" | "BOOKS";
+  priceCents: number;
+  description: string;
+  available: boolean;
+}): Product {
+  return {
+    slug: r.slug,
+    purchaseCode: r.purchaseCode,
+    codeFromSite: false,
+    title: r.title,
+    category: r.category,
+    image: `/img/${r.slug}`,
+    priceCents: r.priceCents,
+    description: r.description,
+    available: r.available,
+    section: r.section,
+    showInShop: true,
+  };
+}
+
+/** Admin-created products (see Product in prisma/schema.prisma), converted to the shared Product shape. */
+async function dbProducts(): Promise<Product[]> {
+  const rows = await prisma.product.findMany();
+  return rows.map(fromDbRow);
+}
+
+/** The static catalogue plus every admin-created product — no per-field overrides applied. */
+export async function baseCatalog(): Promise<Product[]> {
+  return [...baseProducts, ...(await dbProducts())];
+}
+
+/** True if the slug is a real product, static or admin-created. */
+export async function productExists(slug: string): Promise<boolean> {
+  if (getStaticProduct(slug)) return true;
+  const row = await prisma.product.findUnique({ where: { slug }, select: { slug: true } });
+  return Boolean(row);
+}
 
 export type ProductKind = "ART_FRAME" | "HOME_DECOR";
 
@@ -55,7 +99,8 @@ async function titleOverrides(): Promise<Map<string, string>> {
 
 /** The full catalogue with all admin overrides applied. */
 export async function pricedProducts(): Promise<CatalogProduct[]> {
-  const [prices, kinds, sizes, descriptions, availability, titles] = await Promise.all([
+  const [all, prices, kinds, sizes, descriptions, availability, titles] = await Promise.all([
+    baseCatalog(),
     priceOverrides(),
     kindOverrides(),
     sizesBySlug(),
@@ -63,7 +108,7 @@ export async function pricedProducts(): Promise<CatalogProduct[]> {
     availabilityOverrides(),
     titleOverrides(),
   ]);
-  return baseProducts.map((p) => ({
+  return all.map((p) => ({
     ...p,
     priceCents: prices.get(p.slug) ?? p.priceCents,
     description: descriptions.has(p.slug) ? descriptions.get(p.slug)! : p.description,
@@ -76,7 +121,11 @@ export async function pricedProducts(): Promise<CatalogProduct[]> {
 
 /** A single product with its admin overrides applied, if any. */
 export async function pricedProduct(slug: string): Promise<CatalogProduct | undefined> {
-  const p = baseProducts.find((x) => x.slug === slug);
+  let p = baseProducts.find((x) => x.slug === slug);
+  if (!p) {
+    const row = await prisma.product.findUnique({ where: { slug } });
+    if (row) p = fromDbRow(row);
+  }
   if (!p) return undefined;
   const [price, kind, sizeRows, description, availability, title] = await Promise.all([
     prisma.productPrice.findUnique({ where: { slug } }),

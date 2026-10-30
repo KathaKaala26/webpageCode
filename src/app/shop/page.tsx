@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { categories } from "@/lib/products";
 import { pricedProducts } from "@/lib/pricing";
 import ProductCard from "@/components/ProductCard";
 import SectionHeading from "@/components/SectionHeading";
@@ -10,7 +9,8 @@ export const dynamic = "force-dynamic";
 
 export default async function ShopPage({ searchParams }: { searchParams: Promise<{ category?: string }> }) {
   const { category } = await searchParams;
-  const priced = (await pricedProducts()).filter((p) => p.showInShop !== false);
+  const priced = (await pricedProducts()).filter((p) => p.showInShop !== false && (p.section ?? "SHOP") === "SHOP");
+  const categories = Array.from(new Set(priced.map((p) => p.category)));
   const active = categories.find((c) => c === category);
   const list = active ? priced.filter((p) => p.category === active) : priced;
 
