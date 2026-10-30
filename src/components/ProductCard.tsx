@@ -10,41 +10,57 @@ export default function ProductCard({
   priority = false,
   showActions = true,
   showCode = true,
+  linked = true,
 }: {
   product: CatalogProduct;
   priority?: boolean;
   showActions?: boolean;
   showCode?: boolean;
+  linked?: boolean;
 }) {
   const hasSizes = product.kind === "ART_FRAME" && product.sizes.length > 0;
   const fromPriceCents = hasSizes ? Math.min(...product.sizes.map((s) => s.priceCents)) : product.priceCents;
+  const displayTitle = showCode ? product.title : titleWithoutCode(product.title);
+  const imageContent = (
+    <>
+      <Image
+        src={product.image}
+        alt={product.title}
+        fill
+        priority={priority}
+        sizes="(min-width:1024px) 30vw, (min-width:640px) 45vw, 92vw"
+        className="object-contain transition duration-500 group-hover:scale-[1.04]"
+      />
+      {showCode && (
+        <span className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[11px] font-extrabold tracking-wider text-maroon backdrop-blur">
+          {product.purchaseCode}
+        </span>
+      )}
+      {!product.available && (
+        <span className="absolute inset-x-0 bottom-0 bg-ink/75 py-2 text-center text-xs font-bold uppercase tracking-[0.2em] text-shankh">Sold</span>
+      )}
+    </>
+  );
   return (
     <article className="card group flex flex-col overflow-hidden">
-      <Link href={`/shop/${product.slug}`} className="relative block aspect-[4/5] overflow-hidden bg-shankh-dark">
-        <Image
-          src={product.image}
-          alt={product.title}
-          fill
-          priority={priority}
-          sizes="(min-width:1024px) 30vw, (min-width:640px) 45vw, 92vw"
-          className="object-contain transition duration-500 group-hover:scale-[1.04]"
-        />
-        {showCode && (
-          <span className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[11px] font-extrabold tracking-wider text-maroon backdrop-blur">
-            {product.purchaseCode}
-          </span>
-        )}
-        {!product.available && (
-          <span className="absolute inset-x-0 bottom-0 bg-ink/75 py-2 text-center text-xs font-bold uppercase tracking-[0.2em] text-shankh">Sold</span>
-        )}
-      </Link>
+      {linked ? (
+        <Link href={`/shop/${product.slug}`} className="relative block aspect-[4/5] overflow-hidden bg-shankh-dark">
+          {imageContent}
+        </Link>
+      ) : (
+        <div className="relative block aspect-[4/5] overflow-hidden bg-shankh-dark">{imageContent}</div>
+      )}
       <div className="flex flex-1 flex-col gap-3 p-4 sm:p-5">
         <div className="flex-1">
           <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-sindoor">{product.category}</p>
           <h3 className="mt-1 text-xl font-semibold leading-snug">
-            <Link href={`/shop/${product.slug}`} className="hover:text-sindoor">
-              {showCode ? product.title : titleWithoutCode(product.title)}
-            </Link>
+            {linked ? (
+              <Link href={`/shop/${product.slug}`} className="hover:text-sindoor">
+                {displayTitle}
+              </Link>
+            ) : (
+              displayTitle
+            )}
           </h3>
         </div>
         {showActions && (

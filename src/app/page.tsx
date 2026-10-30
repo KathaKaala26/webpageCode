@@ -63,7 +63,7 @@ export default async function HomePage() {
             <Image src={gallery[0]?.image ?? ""} alt="Krsna Leelas Pattachitra" fill sizes="(min-width:1024px) 45vw, 92vw" className="object-cover" />
           </div>
           <div>
-            <SectionHeading eyebrow="Reservations" title="Your Place for Indian Art" align="left" />
+            <SectionHeading title="Your Place for Indian Art" align="left" />
             <div className="prose-kk mt-8">
               <p>{INTRO}</p>
               <p>
@@ -80,9 +80,9 @@ export default async function HomePage() {
         <div className="mt-12 grid gap-8 md:grid-cols-3">
           {gallery.map((p) => (
             <article key={p.slug} className="card flex flex-col overflow-hidden">
-              <Link href={`/shop/${p.slug}`} className="relative block aspect-[3/2] overflow-hidden bg-shankh-dark">
+              <div className="relative aspect-[3/2] overflow-hidden bg-shankh-dark">
                 <Image src={p.image} alt={p.title} fill sizes="(min-width:768px) 31vw, 92vw" className="object-contain transition duration-500 hover:scale-105" />
-              </Link>
+              </div>
               <div className="flex flex-1 flex-col p-6">
                 <h3 className="text-2xl font-semibold">{titleWithoutCode(p.title)}</h3>
                 {p.description && <p className="mt-3 flex-1 text-sm leading-relaxed text-ink-soft">{p.description}</p>}
@@ -99,7 +99,7 @@ export default async function HomePage() {
           <p className="mx-auto mt-8 max-w-3xl text-center leading-relaxed text-ink-soft">{palmLeaf[0]?.description}</p>
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {palmLeaf.map((p) => (
-              <ProductCard key={p.slug} product={p} showActions={false} showCode={false} />
+              <ProductCard key={p.slug} product={p} showActions={false} showCode={false} linked={false} />
             ))}
           </div>
         </div>
@@ -124,7 +124,7 @@ export default async function HomePage() {
         </div>
         <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {colorful.map((p) => (
-            <ProductCard key={p.slug} product={p} showActions={false} showCode={false} />
+            <ProductCard key={p.slug} product={p} showActions={false} showCode={false} linked={false} />
           ))}
         </div>
       </section>
@@ -143,7 +143,7 @@ export default async function HomePage() {
         <SectionHeading eyebrow="About" title="Additional Products" />
         <div className="mx-auto mt-12 grid max-w-3xl gap-6 sm:grid-cols-2">
           {additional.map((p) => (
-            <ProductCard key={p.slug} product={p} showActions={false} showCode={false} />
+            <ProductCard key={p.slug} product={p} showActions={false} showCode={false} linked={false} />
           ))}
         </div>
         <div className="mt-12 text-center">
