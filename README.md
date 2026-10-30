@@ -51,7 +51,7 @@ Supabase Postgres + Storage · Stripe Checkout · Vercel · Vercel Analytics
 3. **Check the GBP exchange rate** — `/admin` → Products → "UK checkout
    exchange rate" is seeded with a placeholder; set it to the real current rate.
 4. **Shipping / COD fee / countries** — `commerce` in `src/lib/site.ts`
-   (defaults: $15 flat, free over $200, no COD fee; ships to USA, Canada, UK —
+   (defaults: $15 flat, free over $500, no COD fee; ships to USA, Canada, UK —
    COD only in USA + Canada).
 5. **Footer contact details** — `site.location` in `src/lib/site.ts`.
 6. **Custom domain** — currently on `katha-and-kala.vercel.app`; a real domain

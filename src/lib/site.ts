@@ -24,7 +24,7 @@ export const commerce = {
   // Flat shipping per order, in cents. Orders at or above the free-shipping
   // threshold ship free. Set freeShippingThresholdCents to 0 to disable.
   shippingFlatCents: 1500,
-  freeShippingThresholdCents: 20000,
+  freeShippingThresholdCents: 50000,
   // Optional surcharge for cash on delivery orders (0 = none).
   codFeeCents: 0,
   // Countries we ship to. COD is offered for every country listed here;
