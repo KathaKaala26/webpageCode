@@ -86,6 +86,14 @@ model ProductPrice {
   updatedAt  DateTime @updatedAt
 }
 
+// Admin-set sold-out override (keyed by products.ts slug). Absent = the
+// static `available` value from products.ts.
+model ProductAvailabilityOverride {
+  slug      String   @id
+  available Boolean
+  updatedAt DateTime @updatedAt
+}
+
 enum ProductKind {
   ART_FRAME
   HOME_DECOR

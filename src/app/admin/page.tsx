@@ -22,6 +22,7 @@ import {
   toggleEnquiry,
   updateHomeSections,
   updateOrderStatus,
+  updateProductAvailability,
   updateProductKind,
 } from "./actions";
 
@@ -71,7 +72,7 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
     errors.push(label);
   };
 
-  const [orders, enquiries, counts, unhandledCount, images, prices, exchangeRate, kinds, sizes, descriptions, homeItems] = await Promise.all([
+  const [orders, enquiries, counts, unhandledCount, images, prices, exchangeRate, kinds, sizes, descriptions, homeItems, availabilityRows] = await Promise.all([
     tab === "orders"
       ? prisma.order
           .findMany({
@@ -145,6 +146,12 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
           return [];
         })
       : Promise.resolve([]),
+    tab === "products"
+      ? prisma.productAvailabilityOverride.findMany().catch((e) => {
+          logErr("availability", e);
+          return [];
+        })
+      : Promise.resolve([]),
   ]);
   const countOf = (s: string) => counts.find((c) => c.status === s)?._count ?? 0;
   const imageOverrideOf = (slug: string) => images.find((i) => i.slug === slug);
@@ -153,6 +160,7 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
   const sizesOf = (slug: string) => sizes.filter((s) => s.slug === slug);
   const descriptionOverrideOf = (slug: string) => descriptions.find((d) => d.slug === slug);
   const homeSectionsOf = (slug: string) => homeItems.filter((h) => h.slug === slug);
+  const availabilityOf = (slug: string, fallback: boolean) => availabilityRows.find((a) => a.slug === slug)?.available ?? fallback;
 
   return (
     <section className="container-kk py-10">
@@ -306,6 +314,7 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
             const descriptionOverride = descriptionOverrideOf(p.slug);
             const currentDescription = descriptionOverride ? descriptionOverride.description : p.description;
             const productHomeItems = homeSectionsOf(p.slug);
+            const available = availabilityOf(p.slug, p.available);
             return (
               <li key={p.slug} className="card space-y-3 p-4">
                 <div className="relative aspect-square overflow-hidden rounded-xl bg-shankh-dark">
@@ -337,6 +346,18 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
                       <button className="text-xs font-bold text-sindoor hover:underline">Revert to original price</button>
                     </form>
                   )}
+                </div>
+
+                <div className="border-t border-ink/10 pt-3">
+                  <p className="text-xs font-bold text-ink-soft">Availability{available ? "" : " (sold out)"}</p>
+                  <form action={updateProductAvailability} className="mt-2 flex items-center gap-2">
+                    <input type="hidden" name="slug" value={p.slug} />
+                    <select name="available" defaultValue={available ? "true" : "false"} className="field h-9 w-auto py-1 text-xs">
+                      <option value="true">In stock</option>
+                      <option value="false">Sold out</option>
+                    </select>
+                    <button type="submit" className="btn-outline h-9 px-3 text-xs">Save</button>
+                  </form>
                 </div>
 
                 <div className="border-t border-ink/10 pt-3">

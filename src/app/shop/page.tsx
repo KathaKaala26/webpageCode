@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ShopPage({ searchParams }: { searchParams: Promise<{ category?: string }> }) {
   const { category } = await searchParams;
-  const priced = await pricedProducts();
+  const priced = (await pricedProducts()).filter((p) => p.showInShop !== false);
   const active = categories.find((c) => c === category);
   const list = active ? priced.filter((p) => p.category === active) : priced;
 

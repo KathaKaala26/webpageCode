@@ -35,6 +35,8 @@ export type Product = {
   description: string;
   available: boolean;
   featured?: boolean;
+  /** false = Home page only, hidden from /shop, the sitemap, and chatbot results. Default true. */
+  showInShop?: boolean;
 };
 
 /** Strips a baked-in " — CODE" suffix from a title for display contexts that hide the purchase code. */
@@ -229,6 +231,88 @@ const rawProducts: Product[] = [
       "Pattachitra holds deep spiritual significance in Hinduism, as it serves as a form of devotion and a visual way to connect with the divine. It is more than an art form; it is a sacred expression of bhakti (devotion).",
     available: true,
   },
+  // Home page "Our Art Gallery" only — showInShop: false hides these from
+  // /shop, the sitemap, and chatbot results. Titles/prices are placeholders;
+  // replace with real values via a follow-up dev edit (title/category have
+  // no admin override yet — see src/app/admin/page.tsx for what does).
+  {
+    slug: "traditional-pattachitra-iv",
+    purchaseCode: "KK-211",
+    codeFromSite: false,
+    title: "Traditional Pattachitra IV",
+    category: "Traditional Pattachitra",
+    image: "https://hjowrfenzypgpqgsqbtl.supabase.co/storage/v1/object/public/product-images/traditional-pattachitra-iv/seed.png",
+    priceCents: 22500,
+    description:
+      "An intricately engraved Pattachitra piece, rich in traditional detail and ready to bring timeless character into any room.",
+    available: true,
+    showInShop: false,
+  },
+  {
+    slug: "krsna-leelas-ii",
+    purchaseCode: "KK-212",
+    codeFromSite: false,
+    title: "Krsna Leelas II",
+    category: "Krsna Leelas",
+    image: "https://hjowrfenzypgpqgsqbtl.supabase.co/storage/v1/object/public/product-images/krsna-leelas-ii/seed.png",
+    priceCents: 27500,
+    description:
+      "A vivid retelling of Krsna's leelas, framed and ready to bring the warmth of this cherished story into your home.",
+    available: true,
+    showInShop: false,
+  },
+  {
+    slug: "traditional-pattachitra-v",
+    purchaseCode: "KK-213",
+    codeFromSite: false,
+    title: "Traditional Pattachitra V",
+    category: "Traditional Pattachitra",
+    image: "https://hjowrfenzypgpqgsqbtl.supabase.co/storage/v1/object/public/product-images/traditional-pattachitra-v/seed.png",
+    priceCents: 22500,
+    description:
+      "An intricately engraved Pattachitra piece, rich in traditional detail and ready to bring timeless character into any room.",
+    available: true,
+    showInShop: false,
+  },
+  {
+    slug: "uniquely-pattachitra-ii",
+    purchaseCode: "KK-214",
+    codeFromSite: false,
+    title: "Uniquely Pattachitra II",
+    category: "Uniquely Pattachitra",
+    image: "https://hjowrfenzypgpqgsqbtl.supabase.co/storage/v1/object/public/product-images/uniquely-pattachitra-ii/seed.png",
+    priceCents: 25000,
+    description:
+      "A distinctive grouping of Pattachitra artworks, each piece a one-of-a-kind expression of this centuries-old tradition.",
+    available: true,
+    showInShop: false,
+  },
+  {
+    slug: "traditional-pattachitra-vi",
+    purchaseCode: "KK-215",
+    codeFromSite: false,
+    title: "Traditional Pattachitra VI",
+    category: "Traditional Pattachitra",
+    image: "https://hjowrfenzypgpqgsqbtl.supabase.co/storage/v1/object/public/product-images/traditional-pattachitra-vi/seed.png",
+    priceCents: 22500,
+    description:
+      "An intricately engraved Pattachitra piece, rich in traditional detail and ready to bring timeless character into any room.",
+    available: true,
+    showInShop: false,
+  },
+  {
+    slug: "krsna-leelas-iii",
+    purchaseCode: "KK-216",
+    codeFromSite: false,
+    title: "Krsna Leelas III",
+    category: "Krsna Leelas",
+    image: "https://hjowrfenzypgpqgsqbtl.supabase.co/storage/v1/object/public/product-images/krsna-leelas-iii/seed.png",
+    priceCents: 27500,
+    description:
+      "A vivid retelling of Krsna's leelas, framed and ready to bring the warmth of this cherished story into your home.",
+    available: true,
+    showInShop: false,
+  },
 ];
 
 // Public-facing catalogue: every image is swapped for a stable `/img/{slug}`
@@ -236,6 +320,9 @@ const rawProducts: Product[] = [
 // in the database, falling back to the original image below otherwise —
 // so admins can swap artwork photos from /admin without a code change.
 export const products: Product[] = rawProducts.map((p) => ({ ...p, image: `/img/${p.slug}` }));
+
+/** Shop-facing subset: excludes products marked showInShop: false (Home-page-only artworks). */
+export const shopProducts: Product[] = products.filter((p) => p.showInShop !== false);
 
 /** The original (non-overridable) image for a product, by slug. */
 export function defaultProductImage(slug: string): string | undefined {
@@ -258,7 +345,7 @@ const norm = (s: string) => s.toUpperCase().replace(/[^A-Z0-9]/g, "");
 /** Find products by purchase code, tolerant of spacing ("gb 101", "GB-101"). */
 export function findByCode(code: string): Product[] {
   const n = norm(code);
-  return products.filter((p) => norm(p.purchaseCode) === n);
+  return shopProducts.filter((p) => norm(p.purchaseCode) === n);
 }
 
 /** Wix CDN resize helper — keeps the original file, just requests a size. */

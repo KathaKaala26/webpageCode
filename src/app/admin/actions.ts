@@ -138,6 +138,19 @@ export async function updateProductKind(fd: FormData) {
   revalidateCatalog(slug);
 }
 
+export async function updateProductAvailability(fd: FormData) {
+  if (!(await isAdmin())) redirect("/admin");
+  const slug = String(fd.get("slug") ?? "");
+  const available = fd.get("available") === "true";
+  if (!getProduct(slug)) return;
+  await prisma.productAvailabilityOverride.upsert({
+    where: { slug },
+    create: { slug, available },
+    update: { available },
+  });
+  revalidateCatalog(slug);
+}
+
 export async function addProductSize(_prev: { error?: string } | undefined, fd: FormData): Promise<{ error?: string }> {
   if (!(await isAdmin())) redirect("/admin");
   const slug = String(fd.get("slug") ?? "");

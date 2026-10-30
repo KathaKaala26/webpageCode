@@ -23,6 +23,12 @@ async function kindOverrides(): Promise<Map<string, ProductKind>> {
   return new Map(rows.map((r) => [r.slug, r.kind]));
 }
 
+/** slug -> admin-set sold-out override. */
+async function availabilityOverrides(): Promise<Map<string, boolean>> {
+  const rows = await prisma.productAvailabilityOverride.findMany();
+  return new Map(rows.map((r) => [r.slug, r.available]));
+}
+
 /** slug -> admin-added size options, in the order they were created. */
 async function sizesBySlug(): Promise<Map<string, SizeOption[]>> {
   const rows = await prisma.productSize.findMany({ orderBy: { updatedAt: "asc" } });
@@ -43,11 +49,12 @@ async function descriptionOverrides(): Promise<Map<string, string>> {
 
 /** The full catalogue with all admin overrides applied. */
 export async function pricedProducts(): Promise<CatalogProduct[]> {
-  const [prices, kinds, sizes, descriptions] = await Promise.all([
+  const [prices, kinds, sizes, descriptions, availability] = await Promise.all([
     priceOverrides(),
     kindOverrides(),
     sizesBySlug(),
     descriptionOverrides(),
+    availabilityOverrides(),
   ]);
   return baseProducts.map((p) => ({
     ...p,
@@ -55,6 +62,7 @@ export async function pricedProducts(): Promise<CatalogProduct[]> {
     description: descriptions.has(p.slug) ? descriptions.get(p.slug)! : p.description,
     kind: kinds.get(p.slug) ?? "ART_FRAME",
     sizes: sizes.get(p.slug) ?? [],
+    available: availability.get(p.slug) ?? p.available,
   }));
 }
 
@@ -62,11 +70,12 @@ export async function pricedProducts(): Promise<CatalogProduct[]> {
 export async function pricedProduct(slug: string): Promise<CatalogProduct | undefined> {
   const p = baseProducts.find((x) => x.slug === slug);
   if (!p) return undefined;
-  const [price, kind, sizeRows, description] = await Promise.all([
+  const [price, kind, sizeRows, description, availability] = await Promise.all([
     prisma.productPrice.findUnique({ where: { slug } }),
     prisma.productKindOverride.findUnique({ where: { slug } }),
     prisma.productSize.findMany({ where: { slug }, orderBy: { updatedAt: "asc" } }),
     prisma.productDescriptionOverride.findUnique({ where: { slug } }),
+    prisma.productAvailabilityOverride.findUnique({ where: { slug } }),
   ]);
   return {
     ...p,
@@ -74,5 +83,6 @@ export async function pricedProduct(slug: string): Promise<CatalogProduct | unde
     description: description ? description.description : p.description,
     kind: kind?.kind ?? "ART_FRAME",
     sizes: sizeRows.map((r) => ({ label: r.label, priceCents: r.priceCents })),
+    available: availability?.available ?? p.available,
   };
 }

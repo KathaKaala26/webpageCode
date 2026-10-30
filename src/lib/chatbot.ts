@@ -3,7 +3,7 @@
 // app). Anything it can't answer is handed to a person via the "Leave a
 // message" form (saved to the admin inbox) or WhatsApp.
 
-import { categories, findByCode, products, type Product } from "./products";
+import { categories, findByCode, shopProducts as products, type Product } from "./products";
 import { commerce } from "./site";
 import { formatMoney } from "./format";
 
