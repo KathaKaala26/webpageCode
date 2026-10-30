@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { CatalogProduct } from "@/lib/pricing";
+import { titleWithoutCode } from "@/lib/products";
 import { formatMoney } from "@/lib/format";
 import InquireButton from "./InquireButton";
 
@@ -8,10 +9,12 @@ export default function ProductCard({
   product,
   priority = false,
   showActions = true,
+  showCode = true,
 }: {
   product: CatalogProduct;
   priority?: boolean;
   showActions?: boolean;
+  showCode?: boolean;
 }) {
   const hasSizes = product.kind === "ART_FRAME" && product.sizes.length > 0;
   const fromPriceCents = hasSizes ? Math.min(...product.sizes.map((s) => s.priceCents)) : product.priceCents;
@@ -26,9 +29,11 @@ export default function ProductCard({
           sizes="(min-width:1024px) 30vw, (min-width:640px) 45vw, 92vw"
           className="object-contain transition duration-500 group-hover:scale-[1.04]"
         />
-        <span className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[11px] font-extrabold tracking-wider text-maroon backdrop-blur">
-          {product.purchaseCode}
-        </span>
+        {showCode && (
+          <span className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[11px] font-extrabold tracking-wider text-maroon backdrop-blur">
+            {product.purchaseCode}
+          </span>
+        )}
         {!product.available && (
           <span className="absolute inset-x-0 bottom-0 bg-ink/75 py-2 text-center text-xs font-bold uppercase tracking-[0.2em] text-shankh">Sold</span>
         )}
@@ -38,7 +43,7 @@ export default function ProductCard({
           <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-sindoor">{product.category}</p>
           <h3 className="mt-1 text-xl font-semibold leading-snug">
             <Link href={`/shop/${product.slug}`} className="hover:text-sindoor">
-              {product.title}
+              {showCode ? product.title : titleWithoutCode(product.title)}
             </Link>
           </h3>
         </div>

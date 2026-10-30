@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { products, WIX } from "@/lib/products";
+import { products, titleWithoutCode, WIX } from "@/lib/products";
 import { pricedProducts } from "@/lib/pricing";
 import { homeSections } from "@/lib/home";
 import ProductCard from "@/components/ProductCard";
@@ -84,7 +84,7 @@ export default async function HomePage() {
                 <Image src={p.image} alt={p.title} fill sizes="(min-width:768px) 31vw, 92vw" className="object-contain transition duration-500 hover:scale-105" />
               </Link>
               <div className="flex flex-1 flex-col p-6">
-                <h3 className="text-2xl font-semibold">{p.title}</h3>
+                <h3 className="text-2xl font-semibold">{titleWithoutCode(p.title)}</h3>
                 {p.description && <p className="mt-3 flex-1 text-sm leading-relaxed text-ink-soft">{p.description}</p>}
               </div>
             </article>
@@ -99,7 +99,7 @@ export default async function HomePage() {
           <p className="mx-auto mt-8 max-w-3xl text-center leading-relaxed text-ink-soft">{palmLeaf[0]?.description}</p>
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {palmLeaf.map((p) => (
-              <ProductCard key={p.slug} product={p} showActions={false} />
+              <ProductCard key={p.slug} product={p} showActions={false} showCode={false} />
             ))}
           </div>
         </div>
@@ -107,29 +107,25 @@ export default async function HomePage() {
 
       {/* ── Colorful Pattachitra ─────────────────────────── */}
       <section className="container-kk py-16 sm:py-24">
-        <div className="grid gap-12 lg:grid-cols-5 lg:gap-16">
-          <div className="lg:col-span-3">
-            <SectionHeading title="Colorful Pattachitra" align="left" />
-            <div className="prose-kk mt-8">
-              <p>
-                Discover the captivating world of modern Pattachitra, a beautiful adaptation of one of India’s most treasured traditional art forms. Rooted in centuries of Indian heritage, Pattachitra combines vibrant colors, intricate patterns, and expressive storytelling to create artworks rich in cultural and spiritual significance. Traditionally associated with Odisha, this art form portrays Hindu deities, sacred stories, mythology, and nature. Today, it continues to evolve, blending traditional craftsmanship with contemporary aesthetics.
-              </p>
-              <p>
-                Modern Pattachitra brings the beauty of Indian culture into your home through bold colors, delicate linework, and elaborate designs. These paintings offer a striking way to celebrate India&apos;s artistic heritage while complementing modern interiors.
-              </p>
-              <p>
-                Beyond their decorative appeal, Pattachitra artworks celebrate the creativity, patience, and craftsmanship of artists who preserve cultural stories across generations. Whether displayed in a living room, prayer space, or bedroom, they create an atmosphere of warmth, beauty, and meaning.
-              </p>
-              <p>
-                By embracing modern Pattachitra, you welcome more than art into your surroundings—you celebrate a living tradition that connects the past with the present. With its unique blend of spirituality, cultural pride, and contemporary elegance, Pattachitra transforms ordinary spaces into inspiring expressions of India&apos;s timeless artistic heritage.
-              </p>
-            </div>
-          </div>
-          <div className="grid content-start gap-6 sm:grid-cols-2 lg:col-span-2 lg:grid-cols-1">
-            {colorful.map((p) => (
-              <ProductCard key={p.slug} product={p} showActions={false} />
-            ))}
-          </div>
+        <SectionHeading title="Colorful Pattachitra" />
+        <div className="prose-kk mx-auto mt-8 max-w-3xl text-center">
+          <p>
+            Discover the captivating world of modern Pattachitra, a beautiful adaptation of one of India’s most treasured traditional art forms. Rooted in centuries of Indian heritage, Pattachitra combines vibrant colors, intricate patterns, and expressive storytelling to create artworks rich in cultural and spiritual significance. Traditionally associated with Odisha, this art form portrays Hindu deities, sacred stories, mythology, and nature. Today, it continues to evolve, blending traditional craftsmanship with contemporary aesthetics.
+          </p>
+          <p>
+            Modern Pattachitra brings the beauty of Indian culture into your home through bold colors, delicate linework, and elaborate designs. These paintings offer a striking way to celebrate India&apos;s artistic heritage while complementing modern interiors.
+          </p>
+          <p>
+            Beyond their decorative appeal, Pattachitra artworks celebrate the creativity, patience, and craftsmanship of artists who preserve cultural stories across generations. Whether displayed in a living room, prayer space, or bedroom, they create an atmosphere of warmth, beauty, and meaning.
+          </p>
+          <p>
+            By embracing modern Pattachitra, you welcome more than art into your surroundings—you celebrate a living tradition that connects the past with the present. With its unique blend of spirituality, cultural pride, and contemporary elegance, Pattachitra transforms ordinary spaces into inspiring expressions of India&apos;s timeless artistic heritage.
+          </p>
+        </div>
+        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {colorful.map((p) => (
+            <ProductCard key={p.slug} product={p} showActions={false} showCode={false} />
+          ))}
         </div>
       </section>
 
@@ -147,7 +143,7 @@ export default async function HomePage() {
         <SectionHeading eyebrow="About" title="Additional Products" />
         <div className="mx-auto mt-12 grid max-w-3xl gap-6 sm:grid-cols-2">
           {additional.map((p) => (
-            <ProductCard key={p.slug} product={p} showActions={false} />
+            <ProductCard key={p.slug} product={p} showActions={false} showCode={false} />
           ))}
         </div>
         <div className="mt-12 text-center">

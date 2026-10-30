@@ -37,6 +37,11 @@ export type Product = {
   featured?: boolean;
 };
 
+/** Strips a baked-in " — CODE" suffix from a title for display contexts that hide the purchase code. */
+export function titleWithoutCode(title: string): string {
+  return title.replace(/\s+—\s+.*$/, "");
+}
+
 const PALM_LEAF =
   "Experience the beauty of a one-of-a-kind masterpiece, meticulously crafted by skilled artisans. Each piece undergoes a painstaking process that takes weeks, involving careful drying, intricate painting, and precise stitching. This dedication ensures that every artwork is unique, reflecting the passion and expertise of its creators. Bring home a true work of art on a simple palm leaf that tells a story of creativity.";
 
