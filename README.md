@@ -9,7 +9,7 @@ chat assistant that replaces Wix Chat.
 **Stack:** Next.js 16 (App Router) · TypeScript · Tailwind CSS 3 · Prisma 6 ·
 Supabase Postgres + Storage · Stripe Checkout · Vercel · Vercel Analytics
 
-**Live:** https://katha-and-kala.vercel.app
+**Live:** https://www.kathakaala.com
 **Repo:** https://github.com/SuniketSolutions/KalaaandKathaa
 
 ---
@@ -54,8 +54,10 @@ Supabase Postgres + Storage · Stripe Checkout · Vercel · Vercel Analytics
    (defaults: $15 flat, free over $500, no COD fee; ships to USA, Canada, UK —
    COD only in USA + Canada).
 5. **Footer contact details** — `site.location` in `src/lib/site.ts`.
-6. **Custom domain** — currently on `katha-and-kala.vercel.app`; a real domain
-   matters for trust and SEO.
+6. ✅ **Custom domain** — live at `kathakaala.com` / `www.kathakaala.com`. The old
+   `katha-and-kala.vercel.app` link now 308-redirects to `www.kathakaala.com`
+   (see `src/proxy.ts`) so old bookmarks/shares still land on the branded
+   domain.
 
 ---
 
