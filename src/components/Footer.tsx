@@ -82,9 +82,23 @@ export default function Footer() {
         </div>
       </div>
       <div className="border-t border-white/10">
-        <div className="container-kk flex flex-col items-center justify-between gap-2 py-5 text-xs text-shankh/50 sm:flex-row">
-          <p>© {new Date().getFullYear()} {site.name}. All rights reserved.</p>
-          <p>Authentic art, sourced directly from artisans in India.</p>
+        <div className="container-kk flex flex-col items-center gap-2 py-5 text-xs text-shankh/50">
+          <div className="flex flex-col items-center justify-between gap-2 sm:w-full sm:flex-row">
+            <p>© {new Date().getFullYear()} {site.name}. All rights reserved.</p>
+            <p>Authentic art, sourced directly from artisans in India.</p>
+          </div>
+          <p>
+            Site developed by{" "}
+            <a
+              href="https://www.suniketsolutions.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-haldi-light"
+            >
+              Suniket Solutions Limited
+            </a>
+            , London
+          </p>
         </div>
       </div>
     </footer>
