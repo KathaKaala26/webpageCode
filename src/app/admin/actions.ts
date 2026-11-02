@@ -3,7 +3,7 @@
 import { randomBytes } from "crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { ADMIN_COOKIE, adminCookieOptions, isAdmin, makeToken, passwordMatches } from "@/lib/admin";
 import { baseCatalog, productExists } from "@/lib/pricing";
@@ -46,6 +46,7 @@ export async function toggleEnquiry(fd: FormData) {
 }
 
 function revalidateCatalog(slug: string) {
+  updateTag("catalog");
   revalidatePath("/admin");
   revalidatePath(`/img/${slug}`);
   revalidatePath("/shop");
@@ -123,6 +124,7 @@ export async function removeProductPrice(fd: FormData) {
 export async function removeAllProductPrices() {
   if (!(await isAdmin())) redirect("/admin");
   await prisma.productPrice.deleteMany({});
+  updateTag("catalog");
   revalidatePath("/", "layout");
 }
 
@@ -250,6 +252,7 @@ export async function updateHomeSections(fd: FormData) {
       });
     })
   );
+  updateTag("catalog");
   revalidatePath("/admin");
   revalidatePath("/");
 }

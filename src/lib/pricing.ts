@@ -1,5 +1,26 @@
+import { unstable_cache } from "next/cache";
 import { prisma } from "./prisma";
 import { products as baseProducts, getProduct as getStaticProduct, type Product } from "./products";
+
+// Raw catalog rows, cached under the "catalog" tag. Every admin mutation
+// calls updateTag("catalog") so this never serves stale data after an edit —
+// it just saves the ~8 live DB round trips every page load used to pay.
+const cachedProductRows = unstable_cache(() => prisma.product.findMany(), ["catalog:products"], { tags: ["catalog"], revalidate: 3600 });
+const cachedPriceRows = unstable_cache(() => prisma.productPrice.findMany(), ["catalog:prices"], { tags: ["catalog"], revalidate: 3600 });
+const cachedKindRows = unstable_cache(() => prisma.productKindOverride.findMany(), ["catalog:kinds"], { tags: ["catalog"], revalidate: 3600 });
+const cachedAvailabilityRows = unstable_cache(() => prisma.productAvailabilityOverride.findMany(), ["catalog:availability"], {
+  tags: ["catalog"],
+  revalidate: 3600,
+});
+const cachedSizeRows = unstable_cache(() => prisma.productSize.findMany({ orderBy: { updatedAt: "asc" } }), ["catalog:sizes"], {
+  tags: ["catalog"],
+  revalidate: 3600,
+});
+const cachedDescriptionRows = unstable_cache(() => prisma.productDescriptionOverride.findMany(), ["catalog:descriptions"], {
+  tags: ["catalog"],
+  revalidate: 3600,
+});
+const cachedTitleRows = unstable_cache(() => prisma.productTitleOverride.findMany(), ["catalog:titles"], { tags: ["catalog"], revalidate: 3600 });
 
 /** Converts an admin-created DB Product row into the shared Product shape. */
 function fromDbRow(r: {
@@ -29,7 +50,7 @@ function fromDbRow(r: {
 
 /** Admin-created products (see Product in prisma/schema.prisma), converted to the shared Product shape. */
 async function dbProducts(): Promise<Product[]> {
-  const rows = await prisma.product.findMany();
+  const rows = await cachedProductRows();
   return rows.map(fromDbRow);
 }
 
@@ -57,25 +78,25 @@ export type CatalogProduct = Product & {
 
 /** slug -> admin-set price override, in cents. */
 export async function priceOverrides(): Promise<Map<string, number>> {
-  const rows = await prisma.productPrice.findMany();
+  const rows = await cachedPriceRows();
   return new Map(rows.map((r) => [r.slug, r.priceCents]));
 }
 
 /** slug -> admin-set kind override. */
 async function kindOverrides(): Promise<Map<string, ProductKind>> {
-  const rows = await prisma.productKindOverride.findMany();
+  const rows = await cachedKindRows();
   return new Map(rows.map((r) => [r.slug, r.kind]));
 }
 
 /** slug -> admin-set sold-out override. */
 async function availabilityOverrides(): Promise<Map<string, boolean>> {
-  const rows = await prisma.productAvailabilityOverride.findMany();
+  const rows = await cachedAvailabilityRows();
   return new Map(rows.map((r) => [r.slug, r.available]));
 }
 
 /** slug -> admin-added size options, in the order they were created. */
 async function sizesBySlug(): Promise<Map<string, SizeOption[]>> {
-  const rows = await prisma.productSize.findMany({ orderBy: { updatedAt: "asc" } });
+  const rows = await cachedSizeRows();
   const map = new Map<string, SizeOption[]>();
   for (const r of rows) {
     const list = map.get(r.slug) ?? [];
@@ -87,13 +108,13 @@ async function sizesBySlug(): Promise<Map<string, SizeOption[]>> {
 
 /** slug -> admin-set description override (empty string means "intentionally blank"). */
 async function descriptionOverrides(): Promise<Map<string, string>> {
-  const rows = await prisma.productDescriptionOverride.findMany();
+  const rows = await cachedDescriptionRows();
   return new Map(rows.map((r) => [r.slug, r.description]));
 }
 
 /** slug -> admin-set title override (empty string means "intentionally blank"). */
 async function titleOverrides(): Promise<Map<string, string>> {
-  const rows = await prisma.productTitleOverride.findMany();
+  const rows = await cachedTitleRows();
   return new Map(rows.map((r) => [r.slug, r.title]));
 }
 
@@ -121,27 +142,5 @@ export async function pricedProducts(): Promise<CatalogProduct[]> {
 
 /** A single product with its admin overrides applied, if any. */
 export async function pricedProduct(slug: string): Promise<CatalogProduct | undefined> {
-  let p = baseProducts.find((x) => x.slug === slug);
-  if (!p) {
-    const row = await prisma.product.findUnique({ where: { slug } });
-    if (row) p = fromDbRow(row);
-  }
-  if (!p) return undefined;
-  const [price, kind, sizeRows, description, availability, title] = await Promise.all([
-    prisma.productPrice.findUnique({ where: { slug } }),
-    prisma.productKindOverride.findUnique({ where: { slug } }),
-    prisma.productSize.findMany({ where: { slug }, orderBy: { updatedAt: "asc" } }),
-    prisma.productDescriptionOverride.findUnique({ where: { slug } }),
-    prisma.productAvailabilityOverride.findUnique({ where: { slug } }),
-    prisma.productTitleOverride.findUnique({ where: { slug } }),
-  ]);
-  return {
-    ...p,
-    priceCents: price?.priceCents ?? p.priceCents,
-    description: description ? description.description : p.description,
-    kind: kind?.kind ?? "ART_FRAME",
-    sizes: sizeRows.map((r) => ({ label: r.label, priceCents: r.priceCents })),
-    available: availability?.available ?? p.available,
-    title: title ? title.title : p.title,
-  };
+  return (await pricedProducts()).find((p) => p.slug === slug);
 }

@@ -5,7 +5,6 @@ import ProductCard from "@/components/ProductCard";
 import SectionHeading from "@/components/SectionHeading";
 
 export const metadata: Metadata = { title: "PUJA ESSENTIALS" };
-export const dynamic = "force-dynamic";
 
 export default async function PujaEssentialsPage() {
   const list = (await pricedProducts()).filter((p) => p.showInShop !== false && p.section === "PUJA_ESSENTIALS");

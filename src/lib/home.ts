@@ -1,5 +1,11 @@
+import { unstable_cache } from "next/cache";
 import { prisma } from "./prisma";
 import type { CatalogProduct } from "./pricing";
+
+const cachedHomeSectionRows = unstable_cache(() => prisma.homeSectionItem.findMany(), ["catalog:home-sections"], {
+  tags: ["catalog"],
+  revalidate: 3600,
+});
 
 export const HOME_SECTIONS = ["GALLERY", "PALM_LEAF", "COLORFUL", "ADDITIONAL"] as const;
 export type HomeSection = (typeof HOME_SECTIONS)[number];
@@ -21,7 +27,7 @@ export const HOME_SECTION_DEFAULTS: Record<HomeSection, string[]> = {
 
 /** The 4 Home page sections, each resolved to an ordered list of catalogue products. */
 export async function homeSections(priced: CatalogProduct[]): Promise<Record<HomeSection, CatalogProduct[]>> {
-  const rows = await prisma.homeSectionItem.findMany({ orderBy: { position: "asc" } });
+  const rows = [...(await cachedHomeSectionRows())].sort((a, b) => a.position - b.position);
   const bySlug = new Map(priced.map((p) => [p.slug, p]));
 
   const result = {} as Record<HomeSection, CatalogProduct[]>;
@@ -35,7 +41,7 @@ export async function homeSections(priced: CatalogProduct[]): Promise<Record<Hom
 
 /** slug -> { section: position } for every HomeSectionItem row — used to pre-fill the admin form. */
 export async function homeSectionMembership(): Promise<Map<string, Partial<Record<HomeSection, number>>>> {
-  const rows = await prisma.homeSectionItem.findMany();
+  const rows = await cachedHomeSectionRows();
   const map = new Map<string, Partial<Record<HomeSection, number>>>();
   for (const r of rows) {
     const entry = map.get(r.slug) ?? {};

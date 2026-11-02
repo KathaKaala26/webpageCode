@@ -6,8 +6,6 @@ import { homeSections } from "@/lib/home";
 import ProductCard from "@/components/ProductCard";
 import SectionHeading from "@/components/SectionHeading";
 
-export const dynamic = "force-dynamic";
-
 const INTRO =
   "At Katha and Kaala, we offer a blend of authentic art pieces, from Jagannath temple art filled with Pattachitra, Tanjore artworks filled with gold in the South, and the endless art form of leelas of Lord Krsna. We focus on building trust with our customers. We strive to offer a diverse range of art and authentic pieces because art is something that isn't used once; it is passed down through generations as a legacy.";
 
@@ -60,7 +58,7 @@ export default async function HomePage() {
       <section className="bg-white py-16 sm:py-24">
         <div className="container-kk grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
           <div className="relative aspect-[4/3] overflow-hidden rounded-3xl shadow-card">
-            <Image src={gallery[0]?.image ?? ""} alt="Krsna Leelas Pattachitra" fill sizes="(min-width:1024px) 45vw, 92vw" className="object-cover" />
+            <Image src={gallery[0]?.image ?? ""} alt="Krsna Leelas Pattachitra" fill priority sizes="(min-width:1024px) 45vw, 92vw" className="object-cover" />
           </div>
           <div>
             <SectionHeading title="Your Place for Indian Art" align="left" />
@@ -78,10 +76,17 @@ export default async function HomePage() {
       <section className="container-kk py-16 sm:py-24">
         <SectionHeading title="Our Art Gallery" />
         <div className="mt-12 grid gap-8 md:grid-cols-3">
-          {gallery.map((p) => (
+          {gallery.map((p, i) => (
             <article key={p.slug} className="card flex flex-col overflow-hidden">
               <div className="relative aspect-[3/2] overflow-hidden bg-shankh-dark">
-                <Image src={p.image} alt={p.title} fill sizes="(min-width:768px) 31vw, 92vw" className="object-contain transition duration-500 hover:scale-105" />
+                <Image
+                  src={p.image}
+                  alt={p.title}
+                  fill
+                  priority={i === 0}
+                  sizes="(min-width:768px) 31vw, 92vw"
+                  className="object-contain transition duration-500 hover:scale-105"
+                />
               </div>
               <div className="flex flex-1 flex-col p-6">
                 <h3 className="text-2xl font-semibold">{titleWithoutCode(p.title)}</h3>

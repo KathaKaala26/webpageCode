@@ -5,7 +5,6 @@ import ProductCard from "@/components/ProductCard";
 import SectionHeading from "@/components/SectionHeading";
 
 export const metadata: Metadata = { title: "BOOKS" };
-export const dynamic = "force-dynamic";
 
 export default async function BooksPage() {
   const list = (await pricedProducts()).filter((p) => p.showInShop !== false && p.section === "BOOKS");

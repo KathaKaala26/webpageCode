@@ -15,8 +15,6 @@ import { CardIcon, TruckIcon } from "@/components/Icons";
 
 type Params = { params: Promise<{ slug: string }> };
 
-export const dynamic = "force-dynamic";
-
 export function generateStaticParams() {
   return products.map((p) => ({ slug: p.slug }));
 }
