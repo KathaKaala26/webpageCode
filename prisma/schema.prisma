@@ -1,3 +1,10 @@
+// After adding a new model and running `db:push`, enable RLS on it in Supabase —
+// `db:push` does NOT do this automatically, and Supabase flags any public-schema table
+// without it as "publicly accessible" (anon/authenticated PostgREST roles can read/write
+// it). The app's own DB role (`postgres`, used via DATABASE_URL) has BYPASSRLS, so this is
+// safe to do with zero policies defined — it blocks the public REST API without affecting
+// Prisma. Run once per new table:
+//   alter table "public"."<ModelName>" enable row level security;
 generator client {
   provider = "prisma-client-js"
 }
