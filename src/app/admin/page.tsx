@@ -16,7 +16,12 @@ import DescriptionEditForm from "./DescriptionEditForm";
 import TitleEditForm from "./TitleEditForm";
 import CreateProductForm from "./CreateProductForm";
 import ProductSearchFilter from "./ProductSearchFilter";
+import VideoEditor from "./VideoEditor";
 import {
+  confirmProductVideoUpload,
+  confirmSiteVideoUpload,
+  createProductVideoUploadUrl,
+  createSiteVideoUploadUrl,
   hideProduct,
   logout,
   removeAllProductPrices,
@@ -25,7 +30,11 @@ import {
   removeProductPrice,
   removeProductSize,
   removeProductTitle,
+  removeProductVideo,
+  removeSiteVideo,
   restoreProduct,
+  setProductVideoYoutube,
+  setSiteVideoYoutube,
   toggleEnquiry,
   updateHomeSections,
   updateOrderStatus,
@@ -79,7 +88,7 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
     errors.push(label);
   };
 
-  const [orders, enquiries, counts, unhandledCount, images, prices, exchangeRate, kinds, sizes, descriptions, homeItems, availabilityRows, titleRows, visibilityRows, catalog] = await Promise.all([
+  const [orders, enquiries, counts, unhandledCount, images, prices, exchangeRate, kinds, sizes, descriptions, homeItems, availabilityRows, titleRows, visibilityRows, videoRows, siteVideo, catalog] = await Promise.all([
     tab === "orders"
       ? prisma.order
           .findMany({
@@ -172,6 +181,18 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
         })
       : Promise.resolve([]),
     tab === "products"
+      ? prisma.productVideo.findMany().catch((e) => {
+          logErr("videos", e);
+          return [];
+        })
+      : Promise.resolve([]),
+    tab === "products"
+      ? prisma.siteVideo.findUnique({ where: { id: 1 } }).catch((e) => {
+          logErr("site-video", e);
+          return null;
+        })
+      : Promise.resolve(null),
+    tab === "products"
       ? baseCatalog().catch((e) => {
           logErr("catalog", e);
           return products;
@@ -188,6 +209,7 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
   const availabilityOf = (slug: string, fallback: boolean) => availabilityRows.find((a) => a.slug === slug)?.available ?? fallback;
   const titleOverrideOf = (slug: string) => titleRows.find((t) => t.slug === slug);
   const hiddenOf = (slug: string) => visibilityRows.find((v) => v.slug === slug)?.hidden ?? false;
+  const videoOverrideOf = (slug: string) => videoRows.find((v) => v.slug === slug);
 
   return (
     <section className="container-kk py-10">
@@ -330,6 +352,20 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
             </div>
           </div>
 
+          <div className="card mt-6 p-4">
+            <p className="text-sm font-bold text-maroon">Site-wide video (More About Us page)</p>
+            <p className="mt-1 text-xs text-ink-soft">Shown once, on the More About Us page — e.g. an "our story" or artisan-process clip.</p>
+            <div className="mt-2">
+              <VideoEditor
+                source={siteVideo?.source}
+                setYoutube={setSiteVideoYoutube}
+                mintUploadUrl={createSiteVideoUploadUrl}
+                confirmUpload={confirmSiteVideoUpload}
+                remove={removeSiteVideo}
+              />
+            </div>
+          </div>
+
           {prices.length > 0 && (
             <div className="card mt-4 flex flex-wrap items-center justify-between gap-3 p-4">
               <p className="text-sm text-ink-soft">
@@ -356,6 +392,17 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
             const titleOverride = titleOverrideOf(p.slug);
             const currentTitle = titleOverride ? titleOverride.title : p.title;
             const hidden = hiddenOf(p.slug);
+            const videoOverride = videoOverrideOf(p.slug);
+
+            async function mintProductVideoUpload(args: { contentType: string; size: number }) {
+              "use server";
+              return createProductVideoUploadUrl({ slug: p.slug, ...args });
+            }
+            async function confirmProductVideoUploadForSlug(args: { path: string }) {
+              "use server";
+              return confirmProductVideoUpload({ slug: p.slug, path: args.path });
+            }
+
             return (
               <li
                 key={p.slug}
@@ -406,6 +453,22 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
                     <button className="text-xs font-bold text-sindoor hover:underline">Revert to original image</button>
                   </form>
                 )}
+
+                <div className="border-t border-ink/10 pt-3">
+                  <p className="text-xs font-bold text-ink-soft">
+                    Video{videoOverride ? ` (${videoOverride.source === "YOUTUBE" ? "YouTube" : "uploaded"})` : ""}
+                  </p>
+                  <div className="mt-2">
+                    <VideoEditor
+                      slug={p.slug}
+                      source={videoOverride?.source}
+                      setYoutube={setProductVideoYoutube}
+                      mintUploadUrl={mintProductVideoUpload}
+                      confirmUpload={confirmProductVideoUploadForSlug}
+                      remove={removeProductVideo}
+                    />
+                  </div>
+                </div>
 
                 <div className="border-t border-ink/10 pt-3">
                   <p className="text-xs font-bold text-ink-soft">

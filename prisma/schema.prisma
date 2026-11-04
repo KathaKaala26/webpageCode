@@ -187,6 +187,36 @@ model ProductDescriptionOverride {
   updatedAt   DateTime @updatedAt
 }
 
+enum VideoSource {
+  YOUTUBE
+  UPLOAD
+}
+
+// Admin-set optional video for a product's detail page (keyed by slug). Absent = no video,
+// the photo stays the only media. source=YOUTUBE uses youtubeId; source=UPLOAD uses url +
+// storagePath (tracked, unlike ProductImage, so the old Supabase Storage object can be
+// deleted on replace/revert — video files are large enough that orphaned objects meaningfully
+// eat into storage quota).
+model ProductVideo {
+  slug        String      @id
+  source      VideoSource
+  youtubeId   String?
+  url         String?
+  storagePath String?
+  updatedAt   DateTime    @updatedAt
+}
+
+// Admin-set single site-wide video (shown on More About Us). Singleton row (id always 1),
+// same shape/semantics as ProductVideo otherwise.
+model SiteVideo {
+  id          Int         @id @default(1)
+  source      VideoSource
+  youtubeId   String?
+  url         String?
+  storagePath String?
+  updatedAt   DateTime    @updatedAt
+}
+
 enum HomeSection {
   GALLERY
   PALM_LEAF

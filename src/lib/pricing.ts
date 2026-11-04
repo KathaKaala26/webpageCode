@@ -21,6 +21,24 @@ const cachedDescriptionRows = unstable_cache(() => prisma.productDescriptionOver
   revalidate: 3600,
 });
 const cachedTitleRows = unstable_cache(() => prisma.productTitleOverride.findMany(), ["catalog:titles"], { tags: ["catalog"], revalidate: 3600 });
+const cachedProductVideoRows = unstable_cache(() => prisma.productVideo.findMany(), ["catalog:videos"], { tags: ["catalog"], revalidate: 3600 });
+const cachedSiteVideo = unstable_cache(() => prisma.siteVideo.findUnique({ where: { id: 1 } }), ["catalog:site-video"], {
+  tags: ["catalog"],
+  revalidate: 3600,
+});
+
+/** The admin-set video for a single product's detail page, if any. Kept separate from
+ * pricedProducts()/CatalogProduct since only the product-detail page needs it, not the
+ * Shop/Puja/Books/Home listing grids. */
+export async function productVideoFor(slug: string) {
+  const rows = await cachedProductVideoRows();
+  return rows.find((r) => r.slug === slug);
+}
+
+/** The single admin-set site-wide video (shown on More About Us), if any. */
+export async function siteVideo() {
+  return cachedSiteVideo();
+}
 const cachedVisibilityRows = unstable_cache(() => prisma.productVisibilityOverride.findMany(), ["catalog:visibility"], {
   tags: ["catalog"],
   revalidate: 3600,

@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 
 export const PRODUCT_IMAGES_BUCKET = "product-images";
+export const VIDEOS_BUCKET = "videos";
 
 /** Server-only client using the service role key — never import from client code. */
 export function supabaseAdmin() {

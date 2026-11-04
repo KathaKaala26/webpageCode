@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { products } from "@/lib/products";
-import { pricedProduct, pricedProducts } from "@/lib/pricing";
+import { pricedProduct, pricedProducts, productVideoFor } from "@/lib/pricing";
 import { formatMoney } from "@/lib/format";
 import { commerce } from "@/lib/site";
 import { siteUrl } from "@/lib/stripe";
@@ -11,6 +11,7 @@ import InquireButton from "@/components/InquireButton";
 import SizeSelector from "@/components/SizeSelector";
 import WallPreviewButton from "@/components/WallPreviewButton";
 import ProductCard from "@/components/ProductCard";
+import ProductVideoPlayer from "@/components/ProductVideoPlayer";
 import { CardIcon, TruckIcon } from "@/components/Icons";
 
 type Params = { params: Promise<{ slug: string }> };
@@ -31,7 +32,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 
 export default async function ProductPage({ params }: Params) {
   const { slug } = await params;
-  const priced = await pricedProducts();
+  const [priced, video] = await Promise.all([pricedProducts(), productVideoFor(slug)]);
   const p = priced.find((x) => x.slug === slug);
   if (!p) notFound();
 
@@ -70,8 +71,15 @@ export default async function ProductPage({ params }: Params) {
         </nav>
 
         <div className="grid gap-8 lg:grid-cols-2 lg:gap-14">
-          <div className="relative aspect-[4/5] overflow-hidden rounded-3xl bg-shankh-dark shadow-card lg:sticky lg:top-24 lg:self-start">
-            <Image src={p.image} alt={p.title} fill priority sizes="(min-width:1024px) 48vw, 100vw" className="object-contain" />
+          <div className="lg:sticky lg:top-24 lg:self-start">
+            <div className="relative aspect-[4/5] overflow-hidden rounded-3xl bg-shankh-dark shadow-card">
+              <Image src={p.image} alt={p.title} fill priority sizes="(min-width:1024px) 48vw, 100vw" className="object-contain" />
+            </div>
+            {video && (
+              <div className="relative mt-6 aspect-video overflow-hidden rounded-3xl bg-shankh-dark shadow-card">
+                <ProductVideoPlayer video={video} title={p.title} />
+              </div>
+            )}
           </div>
 
           <div>

@@ -2,11 +2,14 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { WIX } from "@/lib/products";
+import { siteVideo } from "@/lib/pricing";
 import SectionHeading from "@/components/SectionHeading";
+import ProductVideoPlayer from "@/components/ProductVideoPlayer";
 
 export const metadata: Metadata = { title: "MORE ABOUT US" };
 
-export default function MoreAboutUsPage() {
+export default async function MoreAboutUsPage() {
+  const video = await siteVideo();
   return (
     <>
       <section className="bg-white">
@@ -60,6 +63,15 @@ export default function MoreAboutUsPage() {
           </div>
         </div>
       </section>
+
+      {video && (
+        <section className="container-kk py-16 sm:py-24">
+          <SectionHeading title="Watch our story" />
+          <div className="relative mx-auto mt-10 aspect-video max-w-3xl overflow-hidden rounded-3xl shadow-card">
+            <ProductVideoPlayer video={video} title="Our story" />
+          </div>
+        </section>
+      )}
     </>
   );
 }

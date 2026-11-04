@@ -9,7 +9,8 @@ import { prisma } from "@/lib/prisma";
 import { ADMIN_COOKIE, adminCookieOptions, isAdmin, makeToken, passwordMatches } from "@/lib/admin";
 import { baseCatalog, productExists } from "@/lib/pricing";
 import { HOME_SECTIONS } from "@/lib/home";
-import { PRODUCT_IMAGES_BUCKET, supabaseAdmin } from "@/lib/supabaseAdmin";
+import { PRODUCT_IMAGES_BUCKET, VIDEOS_BUCKET, supabaseAdmin } from "@/lib/supabaseAdmin";
+import { parseYoutubeId } from "@/lib/video";
 
 const PRODUCT_SECTIONS = ["SHOP", "PUJA_ESSENTIALS", "BOOKS"] as const;
 
@@ -108,6 +109,93 @@ export async function removeProductImage(fd: FormData) {
   const slug = String(fd.get("slug") ?? "");
   if (!slug) return;
   await prisma.productImage.deleteMany({ where: { slug } });
+  revalidateCatalog(slug);
+}
+
+const VIDEO_TYPES = ["video/mp4", "video/webm"];
+// Matches the Supabase project's bucket-level file-size limit (its plan's global max upload
+// size) — raising this app-side without also raising the bucket's own limit would just move
+// the rejection from here to a less helpful Supabase storage error.
+const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
+
+// Video files are too large to route through a Server Action (a Vercel serverless function) —
+// unlike uploadProductImage, the browser uploads the bytes straight to Supabase Storage using
+// a short-lived signed URL minted here, and only the resulting path/URL ever touches Prisma.
+export async function createProductVideoUploadUrl(args: {
+  slug: string;
+  contentType: string;
+  size: number;
+}): Promise<{ path: string; token: string; bucket: string } | { error: string }> {
+  if (!(await isAdmin())) redirect("/admin");
+  const { slug, contentType, size } = args;
+  if (!(await productExists(slug))) return { error: "Unknown product." };
+  if (!VIDEO_TYPES.includes(contentType)) return { error: "Use an MP4 or WebM video." };
+  if (size > MAX_VIDEO_BYTES) return { error: "Video must be under 50MB." };
+
+  const ext = contentType.split("/")[1];
+  const path = `product/${slug}/${Date.now()}.${ext}`;
+  const { data, error } = await supabaseAdmin().storage.from(VIDEOS_BUCKET).createSignedUploadUrl(path);
+  if (error || !data) return { error: `Could not start upload: ${error?.message ?? "unknown error"}` };
+  return { path, token: data.token, bucket: VIDEOS_BUCKET };
+}
+
+export async function confirmProductVideoUpload(args: { slug: string; path: string }): Promise<{ error?: string }> {
+  if (!(await isAdmin())) redirect("/admin");
+  const { slug, path } = args;
+  if (!(await productExists(slug))) return { error: "Unknown product." };
+
+  const supabase = supabaseAdmin();
+  const { error: verifyError } = await supabase.storage.from(VIDEOS_BUCKET).createSignedUrl(path, 60);
+  if (verifyError) return { error: "Upload didn't complete — try again." };
+
+  const { data } = supabase.storage.from(VIDEOS_BUCKET).getPublicUrl(path);
+  const previous = await prisma.productVideo.findUnique({ where: { slug } });
+
+  await prisma.productVideo.upsert({
+    where: { slug },
+    create: { slug, source: "UPLOAD", url: data.publicUrl, storagePath: path },
+    update: { source: "UPLOAD", url: data.publicUrl, storagePath: path, youtubeId: null },
+  });
+
+  if (previous?.source === "UPLOAD" && previous.storagePath) {
+    await supabase.storage.from(VIDEOS_BUCKET).remove([previous.storagePath]);
+  }
+
+  revalidateCatalog(slug);
+  return {};
+}
+
+export async function setProductVideoYoutube(_prev: { error?: string } | undefined, fd: FormData): Promise<{ error?: string }> {
+  if (!(await isAdmin())) redirect("/admin");
+  const slug = String(fd.get("slug") ?? "");
+  if (!(await productExists(slug))) return { error: "Unknown product." };
+
+  const youtubeId = parseYoutubeId(String(fd.get("youtubeUrl") ?? ""));
+  if (!youtubeId) return { error: "Paste a valid YouTube link." };
+
+  const previous = await prisma.productVideo.findUnique({ where: { slug } });
+  if (previous?.source === "UPLOAD" && previous.storagePath) {
+    await supabaseAdmin().storage.from(VIDEOS_BUCKET).remove([previous.storagePath]);
+  }
+
+  await prisma.productVideo.upsert({
+    where: { slug },
+    create: { slug, source: "YOUTUBE", youtubeId },
+    update: { source: "YOUTUBE", youtubeId, url: null, storagePath: null },
+  });
+  revalidateCatalog(slug);
+  return {};
+}
+
+export async function removeProductVideo(fd: FormData) {
+  if (!(await isAdmin())) redirect("/admin");
+  const slug = String(fd.get("slug") ?? "");
+  if (!slug) return;
+  const existing = await prisma.productVideo.findUnique({ where: { slug } });
+  if (existing?.source === "UPLOAD" && existing.storagePath) {
+    await supabaseAdmin().storage.from(VIDEOS_BUCKET).remove([existing.storagePath]);
+  }
+  await prisma.productVideo.deleteMany({ where: { slug } });
   revalidateCatalog(slug);
 }
 
@@ -350,6 +438,82 @@ export async function createProduct(_prev: { error?: string } | undefined, fd: F
 
   revalidateCatalog(slug);
   return {};
+}
+
+function revalidateSiteVideo() {
+  updateTag("catalog");
+  revalidatePath("/admin");
+  revalidatePath("/more-about-us");
+}
+
+export async function createSiteVideoUploadUrl(args: {
+  contentType: string;
+  size: number;
+}): Promise<{ path: string; token: string; bucket: string } | { error: string }> {
+  if (!(await isAdmin())) redirect("/admin");
+  const { contentType, size } = args;
+  if (!VIDEO_TYPES.includes(contentType)) return { error: "Use an MP4 or WebM video." };
+  if (size > MAX_VIDEO_BYTES) return { error: "Video must be under 50MB." };
+
+  const ext = contentType.split("/")[1];
+  const path = `site/${Date.now()}.${ext}`;
+  const { data, error } = await supabaseAdmin().storage.from(VIDEOS_BUCKET).createSignedUploadUrl(path);
+  if (error || !data) return { error: `Could not start upload: ${error?.message ?? "unknown error"}` };
+  return { path, token: data.token, bucket: VIDEOS_BUCKET };
+}
+
+export async function confirmSiteVideoUpload(args: { path: string }): Promise<{ error?: string }> {
+  if (!(await isAdmin())) redirect("/admin");
+  const { path } = args;
+
+  const supabase = supabaseAdmin();
+  const { error: verifyError } = await supabase.storage.from(VIDEOS_BUCKET).createSignedUrl(path, 60);
+  if (verifyError) return { error: "Upload didn't complete — try again." };
+
+  const { data } = supabase.storage.from(VIDEOS_BUCKET).getPublicUrl(path);
+  const previous = await prisma.siteVideo.findUnique({ where: { id: 1 } });
+
+  await prisma.siteVideo.upsert({
+    where: { id: 1 },
+    create: { id: 1, source: "UPLOAD", url: data.publicUrl, storagePath: path },
+    update: { source: "UPLOAD", url: data.publicUrl, storagePath: path, youtubeId: null },
+  });
+
+  if (previous?.source === "UPLOAD" && previous.storagePath) {
+    await supabase.storage.from(VIDEOS_BUCKET).remove([previous.storagePath]);
+  }
+
+  revalidateSiteVideo();
+  return {};
+}
+
+export async function setSiteVideoYoutube(_prev: { error?: string } | undefined, fd: FormData): Promise<{ error?: string }> {
+  if (!(await isAdmin())) redirect("/admin");
+  const youtubeId = parseYoutubeId(String(fd.get("youtubeUrl") ?? ""));
+  if (!youtubeId) return { error: "Paste a valid YouTube link." };
+
+  const previous = await prisma.siteVideo.findUnique({ where: { id: 1 } });
+  if (previous?.source === "UPLOAD" && previous.storagePath) {
+    await supabaseAdmin().storage.from(VIDEOS_BUCKET).remove([previous.storagePath]);
+  }
+
+  await prisma.siteVideo.upsert({
+    where: { id: 1 },
+    create: { id: 1, source: "YOUTUBE", youtubeId },
+    update: { source: "YOUTUBE", youtubeId, url: null, storagePath: null },
+  });
+  revalidateSiteVideo();
+  return {};
+}
+
+export async function removeSiteVideo() {
+  if (!(await isAdmin())) redirect("/admin");
+  const existing = await prisma.siteVideo.findUnique({ where: { id: 1 } });
+  if (existing?.source === "UPLOAD" && existing.storagePath) {
+    await supabaseAdmin().storage.from(VIDEOS_BUCKET).remove([existing.storagePath]);
+  }
+  await prisma.siteVideo.deleteMany({ where: { id: 1 } });
+  revalidateSiteVideo();
 }
 
 export async function updateExchangeRate(_prev: { error?: string } | undefined, fd: FormData): Promise<{ error?: string }> {
