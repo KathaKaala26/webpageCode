@@ -6,6 +6,14 @@ on:
 
 jobs:
   deploy:
+    # This file is pushed to two remotes (see .claude/skills/deployment/SKILL.md): origin
+    # (SuniketSolutions/KalaaandKathaa), whose Vercel secrets are valid and do the real
+    # deploying, and kathakaala (KathaKaala26/webpageCode), a client-owned repo neither
+    # Claude nor this session has admin access to — its copy of these secrets has been
+    # failing since 2026-10-30 and can't be fixed from here. Restricting the job to the repo
+    # that actually works avoids a false-failure notification on every push to kathakaala
+    # without needing the two remotes to carry different file contents.
+    if: github.repository == 'SuniketSolutions/KalaaandKathaa'
     runs-on: ubuntu-latest
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}

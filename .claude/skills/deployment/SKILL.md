@@ -9,8 +9,8 @@ This repo has **two git remotes that must always stay in sync**:
 
 | Remote | URL | Role |
 |---|---|---|
-| `origin` | https://github.com/SuniketSolutions/KalaaandKathaa.git | Primary working repo |
-| `kathakaala` | https://github.com/KathaKaala26/webpageCode.git | Wired to the GitHub Actions workflow (`.github/workflows/deploy.yml`) that runs `vercel deploy --prod` on every push to `main` |
+| `origin` | https://github.com/SuniketSolutions/KalaaandKathaa.git | Primary working repo. Its copy of `.github/workflows/deploy.yml` has valid Vercel secrets and is the one that actually runs `vercel deploy --prod` on every push to `main`. |
+| `kathakaala` | https://github.com/KathaKaala26/webpageCode.git | Client-owned repo — push access only, no admin/web access to it. Carries the same workflow file, but the job is scoped with `if: github.repository == 'SuniketSolutions/KalaaandKathaa'` so it no-ops here instead of failing: its own Vercel secrets broke around 2026-10-30 and can't be fixed without admin access to this account. |
 
 **Every commit must be pushed to both remotes, every time** — not just `kathakaala`. Never push to only one.
 
@@ -34,8 +34,8 @@ This repo has **two git remotes that must always stay in sync**:
    git push origin main
    git push kathakaala main
    ```
-5. The push to `kathakaala` triggers `.github/workflows/deploy.yml`, which runs `vercel deploy --prod` using the `VERCEL_TOKEN`/`VERCEL_ORG_ID`/`VERCEL_PROJECT_ID` GitHub secrets (documented in this repo's `README.md`). No separate deploy step is needed — pushing to `kathakaala` *is* the deploy.
-6. If you want to confirm the deploy, check the Actions tab on `https://github.com/KathaKaala26/webpageCode` or the Vercel dashboard — the CLI (`gh`) is not available in this environment, so this is a manual check if needed.
+5. The push to `origin` triggers `.github/workflows/deploy.yml` there, which runs `vercel deploy --prod` using the `VERCEL_TOKEN`/`VERCEL_ORG_ID`/`VERCEL_PROJECT_ID` GitHub secrets (documented in this repo's `README.md`). No separate deploy step is needed — pushing to `origin` *is* the deploy. The same push to `kathakaala` also fires the workflow there, but its job immediately no-ops (see table above) — that's expected, not a failure to chase.
+6. If you want to confirm the deploy, check the Actions tab on `https://github.com/SuniketSolutions/KalaaandKathaa` or the Vercel dashboard. `gh` is not available in this environment; `vercel ls` / `vercel inspect <url>` (the CLI is installed and already authenticated) work for a manual check.
 
 ## Why this matters
 

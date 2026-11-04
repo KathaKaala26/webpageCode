@@ -120,15 +120,26 @@ marked paid even if the webhook is delayed.)
 
 `.github/workflows/deploy.yml` deploys to Vercel production on every push to
 `main`, using the Vercel CLI rather than Vercel's GitHub App integration (the
-app couldn't be authorized for this GitHub org). ✅ Configured and active — it
-needs three **GitHub repository secrets** (repo → Settings → Secrets and
-variables → Actions):
+app couldn't be authorized for this GitHub org). ✅ Configured and active on
+**origin** (`SuniketSolutions/KalaaandKathaa`) — it needs three **GitHub
+repository secrets** there (repo → Settings → Secrets and variables →
+Actions):
 
 | Secret | Value |
 |---|---|
 | `VERCEL_TOKEN` | Generate at Vercel → Account Settings → Tokens |
 | `VERCEL_ORG_ID` | `team_E5pZ4616fGUPJGc9IZqAA63x` |
 | `VERCEL_PROJECT_ID` | `prj_bQSAyrwDPt2GYfhCAAweNrqgcFoO` |
+
+This repo is also pushed to a second, client-owned remote
+(`KathaKaala26/webpageCode`, see `.claude/skills/deployment/SKILL.md`) that
+carries the same workflow file. That repo's own copy of the three secrets
+broke around 2026-10-30 (cause unknown — no admin access to that account to
+investigate), so the job there is scoped with
+`if: github.repository == 'SuniketSolutions/KalaaandKathaa'` to no-op instead
+of reporting a false failure on every push. If someone with admin access to
+`KathaKaala26/webpageCode` fixes its secrets, that condition can be removed
+to restore it as a second independent deploy path.
 
 The workflow triggers a **remote** build on Vercel's own infrastructure
 (`vercel deploy --prod`), the same as a manual `vercel --prod` — it does not
