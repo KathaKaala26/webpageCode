@@ -21,6 +21,10 @@ const cachedDescriptionRows = unstable_cache(() => prisma.productDescriptionOver
   revalidate: 3600,
 });
 const cachedTitleRows = unstable_cache(() => prisma.productTitleOverride.findMany(), ["catalog:titles"], { tags: ["catalog"], revalidate: 3600 });
+const cachedVisibilityRows = unstable_cache(() => prisma.productVisibilityOverride.findMany(), ["catalog:visibility"], {
+  tags: ["catalog"],
+  revalidate: 3600,
+});
 
 /** Converts an admin-created DB Product row into the shared Product shape. */
 function fromDbRow(r: {
@@ -118,9 +122,20 @@ async function titleOverrides(): Promise<Map<string, string>> {
   return new Map(rows.map((r) => [r.slug, r.title]));
 }
 
-/** The full catalogue with all admin overrides applied. */
+/** Slugs the admin has removed from the site ("hidden") — excluded from pricedProducts(). */
+async function hiddenSlugs(): Promise<Set<string>> {
+  const rows = await cachedVisibilityRows();
+  return new Set(rows.filter((r) => r.hidden).map((r) => r.slug));
+}
+
+/**
+ * The full catalogue with all admin overrides applied. Every public page (Shop, Puja
+ * Essentials, Books, Home, sitemap, product-detail) reads through this one function, so
+ * filtering hidden products out here is enough to remove them everywhere at once — the
+ * un-filtered baseCatalog() is still used by /admin itself so hidden products can be restored.
+ */
 export async function pricedProducts(): Promise<CatalogProduct[]> {
-  const [all, prices, kinds, sizes, descriptions, availability, titles] = await Promise.all([
+  const [all, prices, kinds, sizes, descriptions, availability, titles, hidden] = await Promise.all([
     baseCatalog(),
     priceOverrides(),
     kindOverrides(),
@@ -128,16 +143,19 @@ export async function pricedProducts(): Promise<CatalogProduct[]> {
     descriptionOverrides(),
     availabilityOverrides(),
     titleOverrides(),
+    hiddenSlugs(),
   ]);
-  return all.map((p) => ({
-    ...p,
-    priceCents: prices.get(p.slug) ?? p.priceCents,
-    description: descriptions.has(p.slug) ? descriptions.get(p.slug)! : p.description,
-    kind: kinds.get(p.slug) ?? "ART_FRAME",
-    sizes: sizes.get(p.slug) ?? [],
-    available: availability.get(p.slug) ?? p.available,
-    title: titles.has(p.slug) ? titles.get(p.slug)! : p.title,
-  }));
+  return all
+    .filter((p) => !hidden.has(p.slug))
+    .map((p) => ({
+      ...p,
+      priceCents: prices.get(p.slug) ?? p.priceCents,
+      description: descriptions.has(p.slug) ? descriptions.get(p.slug)! : p.description,
+      kind: kinds.get(p.slug) ?? "ART_FRAME",
+      sizes: sizes.get(p.slug) ?? [],
+      available: availability.get(p.slug) ?? p.available,
+      title: titles.has(p.slug) ? titles.get(p.slug)! : p.title,
+    }));
 }
 
 /** A single product with its admin overrides applied, if any. */

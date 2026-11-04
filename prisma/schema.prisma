@@ -150,6 +150,17 @@ model ProductSize {
   @@index([slug])
 }
 
+// Admin-set "remove from site" flag (keyed by slug). Absent/false = visible everywhere, same
+// as today. When true, the product is excluded from every public page (Shop, Puja Essentials,
+// Books, Home, sitemap) and its product-detail page 404s — but it stays in the DB/admin grid
+// so the hide can be reversed. Past orders reference their own snapshotted fields, so hiding a
+// product never affects order history.
+model ProductVisibilityOverride {
+  slug      String   @id
+  hidden    Boolean
+  updatedAt DateTime @updatedAt
+}
+
 // Admin-set replacement title (keyed by slug). Absent = static title from
 // products.ts. An explicit empty string is a deliberate "remove the title"
 // (the title still exists internally for URLs/order records, it's just not

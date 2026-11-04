@@ -1,6 +1,7 @@
 "use server";
 
 import { randomBytes } from "crypto";
+import sharp from "sharp";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath, updateTag } from "next/cache";
@@ -59,6 +60,22 @@ function revalidateCatalog(slug: string) {
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"];
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
+// Wix's own CDN resizes/compresses every original catalogue image (see wixImage() in
+// lib/products.ts) — admin uploads get no such treatment unless we do it ourselves here, so
+// large phone-camera photos were being served at full original size. Match Wix's 2000px cap
+// and re-encode to WebP so every upload stays small automatically.
+const MAX_IMAGE_DIMENSION = 2000;
+
+async function compressImage(file: File): Promise<{ buffer: Buffer; contentType: string; ext: string }> {
+  const input = Buffer.from(await file.arrayBuffer());
+  const buffer = await sharp(input)
+    .rotate()
+    .resize({ width: MAX_IMAGE_DIMENSION, height: MAX_IMAGE_DIMENSION, fit: "inside", withoutEnlargement: true })
+    .webp({ quality: 80 })
+    .toBuffer();
+  return { buffer, contentType: "image/webp", ext: "webp" };
+}
+
 export async function uploadProductImage(_prev: { error?: string } | undefined, fd: FormData): Promise<{ error?: string }> {
   if (!(await isAdmin())) redirect("/admin");
 
@@ -69,10 +86,10 @@ export async function uploadProductImage(_prev: { error?: string } | undefined, 
   if (!IMAGE_TYPES.includes(file.type)) return { error: "Use a JPEG, PNG, WebP or AVIF image." };
   if (file.size > MAX_IMAGE_BYTES) return { error: "Image must be under 5MB." };
 
-  const ext = file.type.split("/")[1];
+  const { buffer, contentType, ext } = await compressImage(file);
   const path = `${slug}/${Date.now()}.${ext}`;
   const supabase = supabaseAdmin();
-  const { error: uploadError } = await supabase.storage.from(PRODUCT_IMAGES_BUCKET).upload(path, file, { contentType: file.type });
+  const { error: uploadError } = await supabase.storage.from(PRODUCT_IMAGES_BUCKET).upload(path, buffer, { contentType });
   if (uploadError) return { error: `Upload failed: ${uploadError.message}` };
 
   const { data } = supabase.storage.from(PRODUCT_IMAGES_BUCKET).getPublicUrl(path);
@@ -232,6 +249,26 @@ export async function removeProductTitle(fd: FormData) {
   revalidateCatalog(slug);
 }
 
+export async function hideProduct(fd: FormData) {
+  if (!(await isAdmin())) redirect("/admin");
+  const slug = String(fd.get("slug") ?? "");
+  if (!(await productExists(slug))) return;
+  await prisma.productVisibilityOverride.upsert({
+    where: { slug },
+    create: { slug, hidden: true },
+    update: { hidden: true },
+  });
+  revalidateCatalog(slug);
+}
+
+export async function restoreProduct(fd: FormData) {
+  if (!(await isAdmin())) redirect("/admin");
+  const slug = String(fd.get("slug") ?? "");
+  if (!slug) return;
+  await prisma.productVisibilityOverride.deleteMany({ where: { slug } });
+  revalidateCatalog(slug);
+}
+
 export async function updateHomeSections(fd: FormData) {
   if (!(await isAdmin())) redirect("/admin");
   const slug = String(fd.get("slug") ?? "");
@@ -292,10 +329,10 @@ export async function createProduct(_prev: { error?: string } | undefined, fd: F
   }
   const purchaseCode = `KK-${randomBytes(3).toString("hex").toUpperCase()}`;
 
-  const ext = file.type.split("/")[1];
+  const { buffer, contentType, ext } = await compressImage(file);
   const path = `${slug}/${Date.now()}.${ext}`;
   const supabase = supabaseAdmin();
-  const { error: uploadError } = await supabase.storage.from(PRODUCT_IMAGES_BUCKET).upload(path, file, { contentType: file.type });
+  const { error: uploadError } = await supabase.storage.from(PRODUCT_IMAGES_BUCKET).upload(path, buffer, { contentType });
   if (uploadError) return { error: `Upload failed: ${uploadError.message}` };
   const { data } = supabase.storage.from(PRODUCT_IMAGES_BUCKET).getPublicUrl(path);
 

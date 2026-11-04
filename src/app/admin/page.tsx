@@ -15,7 +15,9 @@ import SizeAddForm from "./SizeAddForm";
 import DescriptionEditForm from "./DescriptionEditForm";
 import TitleEditForm from "./TitleEditForm";
 import CreateProductForm from "./CreateProductForm";
+import ProductSearchFilter from "./ProductSearchFilter";
 import {
+  hideProduct,
   logout,
   removeAllProductPrices,
   removeProductDescription,
@@ -23,6 +25,7 @@ import {
   removeProductPrice,
   removeProductSize,
   removeProductTitle,
+  restoreProduct,
   toggleEnquiry,
   updateHomeSections,
   updateOrderStatus,
@@ -76,7 +79,7 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
     errors.push(label);
   };
 
-  const [orders, enquiries, counts, unhandledCount, images, prices, exchangeRate, kinds, sizes, descriptions, homeItems, availabilityRows, titleRows, catalog] = await Promise.all([
+  const [orders, enquiries, counts, unhandledCount, images, prices, exchangeRate, kinds, sizes, descriptions, homeItems, availabilityRows, titleRows, visibilityRows, catalog] = await Promise.all([
     tab === "orders"
       ? prisma.order
           .findMany({
@@ -163,6 +166,12 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
         })
       : Promise.resolve([]),
     tab === "products"
+      ? prisma.productVisibilityOverride.findMany().catch((e) => {
+          logErr("visibility", e);
+          return [];
+        })
+      : Promise.resolve([]),
+    tab === "products"
       ? baseCatalog().catch((e) => {
           logErr("catalog", e);
           return products;
@@ -178,6 +187,7 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
   const homeSectionsOf = (slug: string) => homeItems.filter((h) => h.slug === slug);
   const availabilityOf = (slug: string, fallback: boolean) => availabilityRows.find((a) => a.slug === slug)?.available ?? fallback;
   const titleOverrideOf = (slug: string) => titleRows.find((t) => t.slug === slug);
+  const hiddenOf = (slug: string) => visibilityRows.find((v) => v.slug === slug)?.hidden ?? false;
 
   return (
     <section className="container-kk py-10">
@@ -330,7 +340,8 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
               </form>
             </div>
           )}
-        <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <ProductSearchFilter />
+        <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {catalog.map((p) => {
             const imageOverride = imageOverrideOf(p.slug);
             const priceOverride = priceOverrideOf(p.slug);
@@ -344,15 +355,33 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
             const available = availabilityOf(p.slug, p.available);
             const titleOverride = titleOverrideOf(p.slug);
             const currentTitle = titleOverride ? titleOverride.title : p.title;
+            const hidden = hiddenOf(p.slug);
             return (
-              <li key={p.slug} className="card space-y-3 p-4">
+              <li
+                key={p.slug}
+                data-product-card
+                data-search={`${p.title} ${p.category}`.toLowerCase()}
+                className={`card space-y-3 p-4 ${hidden ? "opacity-60" : ""}`}
+              >
                 <div className="relative aspect-square overflow-hidden rounded-xl bg-shankh-dark">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={src} alt={p.title} className="h-full w-full object-cover" />
                 </div>
                 <div>
                   <p className="text-sm font-bold">{p.title}</p>
-                  <p className="text-xs text-ink-soft">{p.purchaseCode} · {imageOverride ? "Custom image" : "Original image"}</p>
+                  <p className="text-xs text-ink-soft">
+                    {p.purchaseCode} · {imageOverride ? "Custom image" : "Original image"}
+                    {hidden && " · Removed from site"}
+                  </p>
+                </div>
+
+                <div className="border-t border-ink/10 pt-3">
+                  <form action={hidden ? restoreProduct : hideProduct}>
+                    <input type="hidden" name="slug" value={p.slug} />
+                    <button className={`text-xs font-bold hover:underline ${hidden ? "text-leaf" : "text-sindoor"}`}>
+                      {hidden ? "Restore to site" : "Remove from site"}
+                    </button>
+                  </form>
                 </div>
 
                 <div className="border-t border-ink/10 pt-3">
