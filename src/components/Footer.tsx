@@ -84,7 +84,7 @@ export default function Footer() {
       <div className="border-t border-white/10">
         <div className="container-kk flex flex-col items-center gap-2 py-5 text-xs text-shankh/50">
           <div className="flex flex-col items-center justify-between gap-2 sm:w-full sm:flex-row">
-            <p>© {new Date().getFullYear()} {site.name}. All rights reserved.</p>
+            <p>© {new Date().getFullYear()} Katha Kaala LLC. All rights reserved.</p>
             <p>Authentic art, sourced directly from artisans in India.</p>
           </div>
           <p>
