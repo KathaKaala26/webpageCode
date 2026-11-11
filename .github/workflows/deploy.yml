@@ -65,10 +65,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # wrangler, miniflare, and @cloudflare/kv-asset-handler all require Node >=22.
+          node-version: 22
 
+      # `npm ci` has failed here with a lockfile mismatch (picomatch resolved differently)
+      # that didn't reproduce locally on Windows — likely a Linux-runner-specific optional
+      # dependency resolution. `npm install` resolves it instead of failing outright.
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Build for Cloudflare Workers
         run: npx opennextjs-cloudflare build

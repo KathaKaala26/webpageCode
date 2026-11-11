@@ -50,5 +50,10 @@ const nextConfig = {
 
 export default nextConfig;
 
-import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
-initOpenNextCloudflareForDev();
+// Only relevant when building/dev-ing for Cloudflare Workers — it eagerly validates every
+// binding declared in wrangler.jsonc (Hyperdrive, R2, D1/DO), which fails outright on Vercel
+// (VERCEL=1 is set automatically there), since those bindings don't exist there at all.
+if (!process.env.VERCEL) {
+  const { initOpenNextCloudflareForDev } = await import("@opennextjs/cloudflare");
+  initOpenNextCloudflareForDev();
+}
