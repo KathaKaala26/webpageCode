@@ -12,6 +12,12 @@ const nextConfig = {
   images: {
     // All artwork stays on the original Wix media CDN — nothing is re-hosted.
     remotePatterns: [{ protocol: "https", hostname: "static.wixstatic.com" }],
+    // Most product images are same-origin /img/{slug} paths that src/app/img/[slug]/route.ts
+    // already fetches, resizes (2000x2000 from Wix), and caches itself — next/image's own
+    // optimizer was redundantly re-resizing/re-caching each variant on top of that, which is
+    // what drove Vercel's "Image Optimization – Cache Writes" quota to 75%. Disabling it here
+    // avoids reproducing the same cost against Workers' own limits after the Cloudflare move.
+    unoptimized: true,
   },
   async headers() {
     return [
