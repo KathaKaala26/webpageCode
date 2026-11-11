@@ -1,8 +1,10 @@
 import { unstable_cache } from "next/cache";
-import { prisma } from "./prisma";
+import { getDbAsync } from "./prisma";
 import type { CatalogProduct } from "./pricing";
 
-const cachedHomeSectionRows = unstable_cache(() => prisma.homeSectionItem.findMany(), ["catalog:home-sections"], {
+// getDbAsync() (not the sync `prisma` singleton) because the Home page is not force-dynamic
+// and can be rendered during `next build`'s static generation — see src/lib/pricing.ts.
+const cachedHomeSectionRows = unstable_cache(async () => (await getDbAsync()).homeSectionItem.findMany(), ["catalog:home-sections"], {
   tags: ["catalog"],
   revalidate: 3600,
 });

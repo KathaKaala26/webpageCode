@@ -1,11 +1,14 @@
-name: Deploy to Vercel
+name: Deploy
 
 on:
   push:
     branches: [main]
 
 jobs:
-  deploy:
+  # TRANSITIONAL: kept running alongside deploy-cloudflare during the Cloudflare cutover
+  # (see the migration plan) as a rollback safety net — remove once Cloudflare is verified
+  # and the Vercel project is decommissioned.
+  deploy-vercel:
     # This file is pushed to two remotes (see .claude/skills/deployment/SKILL.md): origin
     # (SuniketSolutions/KalaaandKathaa) and kathakaala (KathaKaala26/webpageCode). Both now
     # carry valid secrets for the same Vercel project (katha-and-kala), re-added 2026-11-08,
@@ -32,3 +35,46 @@ jobs:
       # returning empty placeholder values for this project's env vars.
       - name: Deploy to Vercel
         run: vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }} --yes
+
+  deploy-cloudflare:
+    # Same dual-remote note as deploy-vercel above. Requires CLOUDFLARE_API_TOKEN and
+    # CLOUDFLARE_ACCOUNT_ID secrets (Workers Scripts/KV/Hyperdrive/D1/R2 Edit permissions),
+    # plus every app secret listed in the migration plan's env-var table, on BOTH repos.
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      # Build-time static generation (home, shop/[slug], puja-essentials, books,
+      # more-about-us, sitemap) needs a real Postgres connection — there's no live
+      # Hyperdrive binding available during the build step itself, only at Worker runtime,
+      # so this reuses the same local-connection-string override next.config.mjs's
+      # initOpenNextCloudflareForDev() looks for (see .env.local for the local-dev version
+      # of this same variable).
+      CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: ${{ secrets.DIRECT_URL }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DIRECT_URL: ${{ secrets.DIRECT_URL }}
+      NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
+      NEXT_PUBLIC_WHATSAPP_NUMBER: ${{ secrets.NEXT_PUBLIC_WHATSAPP_NUMBER }}
+      NEXT_PUBLIC_CONTACT_EMAIL: ${{ secrets.NEXT_PUBLIC_CONTACT_EMAIL }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build for Cloudflare Workers
+        run: npx opennextjs-cloudflare build
+
+      # Runtime secrets (STRIPE_SECRET_KEY, ADMIN_PASSWORD, SUPABASE_SERVICE_ROLE_KEY, etc.)
+      # are set once via `wrangler secret put` rather than synced here on every deploy, to
+      # avoid repeatedly passing secret values through CI — see the migration plan.
+      - name: Deploy to Cloudflare Workers
+        run: npx wrangler deploy

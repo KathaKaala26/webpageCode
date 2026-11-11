@@ -1,7 +1,7 @@
 "use server";
 
 import { randomBytes } from "crypto";
-import sharp from "sharp";
+import { optimizeImage } from "wasm-image-optimization";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath, updateTag } from "next/cache";
@@ -58,8 +58,19 @@ function revalidateCatalog(slug: string) {
   revalidatePath("/");
 }
 
-const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"];
+const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif", "image/jfif", "image/pjpeg"];
+const IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".jfif", ".png", ".webp", ".avif"];
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+
+// Browsers report `file.type` inconsistently for less-common extensions — Windows in
+// particular often sends an empty string or "image/jfif" (not a registered IANA type) for
+// .jfif files, which is just a JPEG with a different extension. Fall back to the file name's
+// extension whenever the MIME type isn't one we recognize, rather than rejecting a valid image.
+function isAcceptedImageFile(file: File): boolean {
+  if (IMAGE_TYPES.includes(file.type)) return true;
+  const name = file.name.toLowerCase();
+  return IMAGE_EXTENSIONS.some((ext) => name.endsWith(ext));
+}
 
 // Wix's own CDN resizes/compresses every original catalogue image (see wixImage() in
 // lib/products.ts) — admin uploads get no such treatment unless we do it ourselves here, so
@@ -68,13 +79,24 @@ const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const MAX_IMAGE_DIMENSION = 2000;
 
 async function compressImage(file: File): Promise<{ buffer: Buffer; contentType: string; ext: string }> {
-  const input = Buffer.from(await file.arrayBuffer());
-  const buffer = await sharp(input)
-    .rotate()
-    .resize({ width: MAX_IMAGE_DIMENSION, height: MAX_IMAGE_DIMENSION, fit: "inside", withoutEnlargement: true })
-    .webp({ quality: 80 })
-    .toBuffer();
-  return { buffer, contentType: "image/webp", ext: "webp" };
+  const input = new Uint8Array(await file.arrayBuffer());
+  // wasm-image-optimization (Skia-based) runs as pure WASM, so it works both under plain
+  // Node (`next dev`) and inside the Cloudflare Worker — unlike sharp, which needs a native
+  // binary unavailable on Workers. `fit: "contain"` preserves aspect ratio like sharp's
+  // `fit: "inside"` did, but — unlike sharp's `withoutEnlargement: true` — it will upscale an
+  // image smaller than 2000px. Admin uploads are in practice always full-size phone/camera
+  // photos (see MAX_IMAGE_DIMENSION comment above), so this edge case is accepted as a minor,
+  // unlikely-to-matter behavior change rather than added complexity to special-case it.
+  const result = await optimizeImage({
+    image: input,
+    width: MAX_IMAGE_DIMENSION,
+    height: MAX_IMAGE_DIMENSION,
+    fit: "contain",
+    format: "webp",
+    quality: 80,
+  });
+  if (!result) throw new Error("Image compression failed — unsupported or corrupt file.");
+  return { buffer: Buffer.from(result.data), contentType: "image/webp", ext: "webp" };
 }
 
 export async function uploadProductImage(_prev: { error?: string } | undefined, fd: FormData): Promise<{ error?: string }> {
@@ -84,7 +106,7 @@ export async function uploadProductImage(_prev: { error?: string } | undefined, 
   const file = fd.get("file");
   if (!(await productExists(slug))) return { error: "Unknown product." };
   if (!(file instanceof File) || file.size === 0) return { error: "Choose an image file first." };
-  if (!IMAGE_TYPES.includes(file.type)) return { error: "Use a JPEG, PNG, WebP or AVIF image." };
+  if (!isAcceptedImageFile(file)) return { error: "Use a JPEG, PNG, WebP or AVIF image." };
   if (file.size > MAX_IMAGE_BYTES) return { error: "Image must be under 5MB." };
 
   const { buffer, contentType, ext } = await compressImage(file);
@@ -404,7 +426,7 @@ export async function createProduct(_prev: { error?: string } | undefined, fd: F
   if (!PRODUCT_SECTIONS.includes(section as (typeof PRODUCT_SECTIONS)[number])) return { error: "Choose a section." };
   if (!Number.isFinite(dollars) || dollars <= 0) return { error: "Enter a valid price." };
   if (!(file instanceof File) || file.size === 0) return { error: "Choose an image file first." };
-  if (!IMAGE_TYPES.includes(file.type)) return { error: "Use a JPEG, PNG, WebP or AVIF image." };
+  if (!isAcceptedImageFile(file)) return { error: "Use a JPEG, PNG, WebP or AVIF image." };
   if (file.size > MAX_IMAGE_BYTES) return { error: "Image must be under 5MB." };
 
   const existing = new Set((await baseCatalog()).map((p) => p.slug));

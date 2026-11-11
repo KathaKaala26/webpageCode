@@ -1,48 +1,89 @@
+import { cache } from "react";
 import { unstable_cache } from "next/cache";
-import { prisma } from "./prisma";
+import { getDbAsync } from "./prisma";
 import { products as baseProducts, getProduct as getStaticProduct, type Product } from "./products";
 
-// Raw catalog rows, cached under the "catalog" tag. Every admin mutation
-// calls updateTag("catalog") so this never serves stale data after an edit —
-// it just saves the ~8 live DB round trips every page load used to pay.
-const cachedProductRows = unstable_cache(() => prisma.product.findMany(), ["catalog:products"], { tags: ["catalog"], revalidate: 3600 });
-const cachedPriceRows = unstable_cache(() => prisma.productPrice.findMany(), ["catalog:prices"], { tags: ["catalog"], revalidate: 3600 });
-const cachedKindRows = unstable_cache(() => prisma.productKindOverride.findMany(), ["catalog:kinds"], { tags: ["catalog"], revalidate: 3600 });
-const cachedAvailabilityRows = unstable_cache(() => prisma.productAvailabilityOverride.findMany(), ["catalog:availability"], {
-  tags: ["catalog"],
-  revalidate: 3600,
-});
-const cachedSizeRows = unstable_cache(() => prisma.productSize.findMany({ orderBy: { updatedAt: "asc" } }), ["catalog:sizes"], {
-  tags: ["catalog"],
-  revalidate: 3600,
-});
-const cachedDescriptionRows = unstable_cache(() => prisma.productDescriptionOverride.findMany(), ["catalog:descriptions"], {
-  tags: ["catalog"],
-  revalidate: 3600,
-});
-const cachedTitleRows = unstable_cache(() => prisma.productTitleOverride.findMany(), ["catalog:titles"], { tags: ["catalog"], revalidate: 3600 });
-const cachedProductVideoRows = unstable_cache(() => prisma.productVideo.findMany(), ["catalog:videos"], { tags: ["catalog"], revalidate: 3600 });
-const cachedSiteVideo = unstable_cache(() => prisma.siteVideo.findUnique({ where: { id: 1 } }), ["catalog:site-video"], {
-  tags: ["catalog"],
-  revalidate: 3600,
-});
+type ProductRow = Awaited<ReturnType<Awaited<ReturnType<typeof getDbAsync>>["product"]["findMany"]>>[number];
+type PriceRow = Awaited<ReturnType<Awaited<ReturnType<typeof getDbAsync>>["productPrice"]["findMany"]>>[number];
+type KindRow = Awaited<ReturnType<Awaited<ReturnType<typeof getDbAsync>>["productKindOverride"]["findMany"]>>[number];
+type AvailabilityRow = Awaited<
+  ReturnType<Awaited<ReturnType<typeof getDbAsync>>["productAvailabilityOverride"]["findMany"]>
+>[number];
+type SizeRow = Awaited<ReturnType<Awaited<ReturnType<typeof getDbAsync>>["productSize"]["findMany"]>>[number];
+type DescriptionRow = Awaited<
+  ReturnType<Awaited<ReturnType<typeof getDbAsync>>["productDescriptionOverride"]["findMany"]>
+>[number];
+type TitleRow = Awaited<ReturnType<Awaited<ReturnType<typeof getDbAsync>>["productTitleOverride"]["findMany"]>>[number];
+type VisibilityRow = Awaited<
+  ReturnType<Awaited<ReturnType<typeof getDbAsync>>["productVisibilityOverride"]["findMany"]>
+>[number];
+type VideoRow = Awaited<ReturnType<Awaited<ReturnType<typeof getDbAsync>>["productVideo"]["findMany"]>>[number];
+type SiteVideoRow = Awaited<ReturnType<Awaited<ReturnType<typeof getDbAsync>>["siteVideo"]["findUnique"]>>;
+
+type CatalogData = {
+  products: ProductRow[];
+  prices: PriceRow[];
+  kinds: KindRow[];
+  availability: AvailabilityRow[];
+  sizes: SizeRow[];
+  descriptions: DescriptionRow[];
+  titles: TitleRow[];
+  visibility: VisibilityRow[];
+  videos: VideoRow[];
+  siteVideo: SiteVideoRow;
+};
+
+// All catalog-related tables fetched in one shot, under one "catalog" cache entry. Every
+// admin mutation calls updateTag("catalog") so this never serves stale data after an edit —
+// it just saves the ~10 live DB round trips every page load used to pay.
+//
+// This used to be 10 separate unstable_cache() calls (one per table). Cloudflare's tag cache
+// is a Durable Object round trip per cache-key staleness check, so 10 separate cache entries
+// meant 10 DO round trips per request — the admin page (which reads all of them, once per
+// product row) was blowing past Workers' free-tier 10ms CPU budget. Collapsing to a single
+// cache entry cuts that to 1 round trip.
+//
+// Uses getDbAsync() (not the sync `prisma` singleton) because the pages that read this
+// (home, shop/[slug], puja-essentials, books, more-about-us, sitemap) are NOT force-dynamic
+// and can be invoked during `next build`'s static generation, where only the async,
+// build-time-safe Cloudflare context is available.
+const cachedCatalogData = unstable_cache(
+  async (): Promise<CatalogData> => {
+    const db = await getDbAsync();
+    const [products, prices, kinds, availability, sizes, descriptions, titles, visibility, videos, siteVideo] = await Promise.all([
+      db.product.findMany(),
+      db.productPrice.findMany(),
+      db.productKindOverride.findMany(),
+      db.productAvailabilityOverride.findMany(),
+      db.productSize.findMany({ orderBy: { updatedAt: "asc" } }),
+      db.productDescriptionOverride.findMany(),
+      db.productTitleOverride.findMany(),
+      db.productVisibilityOverride.findMany(),
+      db.productVideo.findMany(),
+      db.siteVideo.findUnique({ where: { id: 1 } }),
+    ]);
+    return { products, prices, kinds, availability, sizes, descriptions, titles, visibility, videos, siteVideo };
+  },
+  ["catalog:all"],
+  { tags: ["catalog"], revalidate: 3600 },
+);
+
+// Deduped within a single request/render — pricedProducts() fans this out to 8 call sites in
+// one Promise.all, and without this they'd each independently invoke cachedCatalogData().
+const getCatalogData = cache(() => cachedCatalogData());
 
 /** The admin-set video for a single product's detail page, if any. Kept separate from
  * pricedProducts()/CatalogProduct since only the product-detail page needs it, not the
  * Shop/Puja/Books/Home listing grids. */
 export async function productVideoFor(slug: string) {
-  const rows = await cachedProductVideoRows();
-  return rows.find((r) => r.slug === slug);
+  const { videos } = await getCatalogData();
+  return videos.find((r) => r.slug === slug);
 }
 
 /** The single admin-set site-wide video (shown on More About Us), if any. */
 export async function siteVideo() {
-  return cachedSiteVideo();
+  return (await getCatalogData()).siteVideo;
 }
-const cachedVisibilityRows = unstable_cache(() => prisma.productVisibilityOverride.findMany(), ["catalog:visibility"], {
-  tags: ["catalog"],
-  revalidate: 3600,
-});
 
 /** Converts an admin-created DB Product row into the shared Product shape. */
 function fromDbRow(r: {
@@ -72,8 +113,8 @@ function fromDbRow(r: {
 
 /** Admin-created products (see Product in prisma/schema.prisma), converted to the shared Product shape. */
 async function dbProducts(): Promise<Product[]> {
-  const rows = await cachedProductRows();
-  return rows.map(fromDbRow);
+  const { products } = await getCatalogData();
+  return products.map(fromDbRow);
 }
 
 /** The static catalogue plus every admin-created product — no per-field overrides applied. */
@@ -84,8 +125,8 @@ export async function baseCatalog(): Promise<Product[]> {
 /** True if the slug is a real product, static or admin-created. */
 export async function productExists(slug: string): Promise<boolean> {
   if (getStaticProduct(slug)) return true;
-  const row = await prisma.product.findUnique({ where: { slug }, select: { slug: true } });
-  return Boolean(row);
+  const { products } = await getCatalogData();
+  return products.some((p) => p.slug === slug);
 }
 
 export type ProductKind = "ART_FRAME" | "HOME_DECOR";
@@ -100,27 +141,27 @@ export type CatalogProduct = Product & {
 
 /** slug -> admin-set price override, in cents. */
 export async function priceOverrides(): Promise<Map<string, number>> {
-  const rows = await cachedPriceRows();
-  return new Map(rows.map((r) => [r.slug, r.priceCents]));
+  const { prices } = await getCatalogData();
+  return new Map(prices.map((r) => [r.slug, r.priceCents]));
 }
 
 /** slug -> admin-set kind override. */
 async function kindOverrides(): Promise<Map<string, ProductKind>> {
-  const rows = await cachedKindRows();
-  return new Map(rows.map((r) => [r.slug, r.kind]));
+  const { kinds } = await getCatalogData();
+  return new Map(kinds.map((r) => [r.slug, r.kind]));
 }
 
 /** slug -> admin-set sold-out override. */
 async function availabilityOverrides(): Promise<Map<string, boolean>> {
-  const rows = await cachedAvailabilityRows();
-  return new Map(rows.map((r) => [r.slug, r.available]));
+  const { availability } = await getCatalogData();
+  return new Map(availability.map((r) => [r.slug, r.available]));
 }
 
 /** slug -> admin-added size options, in the order they were created. */
 async function sizesBySlug(): Promise<Map<string, SizeOption[]>> {
-  const rows = await cachedSizeRows();
+  const { sizes } = await getCatalogData();
   const map = new Map<string, SizeOption[]>();
-  for (const r of rows) {
+  for (const r of sizes) {
     const list = map.get(r.slug) ?? [];
     list.push({ label: r.label, priceCents: r.priceCents });
     map.set(r.slug, list);
@@ -130,20 +171,20 @@ async function sizesBySlug(): Promise<Map<string, SizeOption[]>> {
 
 /** slug -> admin-set description override (empty string means "intentionally blank"). */
 async function descriptionOverrides(): Promise<Map<string, string>> {
-  const rows = await cachedDescriptionRows();
-  return new Map(rows.map((r) => [r.slug, r.description]));
+  const { descriptions } = await getCatalogData();
+  return new Map(descriptions.map((r) => [r.slug, r.description]));
 }
 
 /** slug -> admin-set title override (empty string means "intentionally blank"). */
 async function titleOverrides(): Promise<Map<string, string>> {
-  const rows = await cachedTitleRows();
-  return new Map(rows.map((r) => [r.slug, r.title]));
+  const { titles } = await getCatalogData();
+  return new Map(titles.map((r) => [r.slug, r.title]));
 }
 
 /** Slugs the admin has removed from the site ("hidden") — excluded from pricedProducts(). */
 async function hiddenSlugs(): Promise<Set<string>> {
-  const rows = await cachedVisibilityRows();
-  return new Set(rows.filter((r) => r.hidden).map((r) => r.slug));
+  const { visibility } = await getCatalogData();
+  return new Set(visibility.filter((r) => r.hidden).map((r) => r.slug));
 }
 
 /**
@@ -179,4 +220,15 @@ export async function pricedProducts(): Promise<CatalogProduct[]> {
 /** A single product with its admin overrides applied, if any. */
 export async function pricedProduct(slug: string): Promise<CatalogProduct | undefined> {
   return (await pricedProducts()).find((p) => p.slug === slug);
+}
+
+export const PRICE_SORT_VALUES = ["price-asc", "price-desc"] as const;
+export type PriceSort = (typeof PRICE_SORT_VALUES)[number];
+
+/** Sorts a product list by price — low-to-high or high-to-low. Unrecognized/absent `sort`
+ * values are returned unchanged (the catalog's natural order). */
+export function sortByPrice<T extends { priceCents: number }>(list: T[], sort?: string): T[] {
+  if (sort === "price-asc") return [...list].sort((a, b) => a.priceCents - b.priceCents);
+  if (sort === "price-desc") return [...list].sort((a, b) => b.priceCents - a.priceCents);
+  return list;
 }

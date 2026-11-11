@@ -1,32 +1,39 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { pricedProducts } from "@/lib/pricing";
+import { pricedProducts, sortByPrice } from "@/lib/pricing";
 import ProductCard from "@/components/ProductCard";
 import SectionHeading from "@/components/SectionHeading";
+import PriceSortChips from "@/components/PriceSortChips";
 
 export const metadata: Metadata = { title: "SHOP" };
 export const dynamic = "force-dynamic";
 
-export default async function ShopPage({ searchParams }: { searchParams: Promise<{ category?: string }> }) {
-  const { category } = await searchParams;
+export default async function ShopPage({ searchParams }: { searchParams: Promise<{ category?: string; sort?: string }> }) {
+  const { category, sort } = await searchParams;
   const priced = (await pricedProducts()).filter((p) => p.showInShop !== false && (p.section ?? "SHOP") === "SHOP");
   const categories = Array.from(new Set(priced.map((p) => p.category)));
   const active = categories.find((c) => c === category);
-  const list = active ? priced.filter((p) => p.category === active) : priced;
+  const list = sortByPrice(active ? priced.filter((p) => p.category === active) : priced, sort);
 
-  const chip = (label: string, href: string, on: boolean) => (
-    <Link
-      key={label}
-      href={href}
-      scroll={false}
-      aria-current={on ? "page" : undefined}
-      className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition ${
-        on ? "border-maroon bg-maroon text-shankh" : "border-ink/15 bg-white text-ink-soft hover:border-maroon hover:text-maroon"
-      }`}
-    >
-      {label}
-    </Link>
-  );
+  const chip = (label: string, category: string | undefined, on: boolean) => {
+    const params = new URLSearchParams();
+    if (category) params.set("category", category);
+    if (sort) params.set("sort", sort);
+    const qs = params.toString();
+    return (
+      <Link
+        key={label}
+        href={qs ? `/shop?${qs}` : "/shop"}
+        scroll={false}
+        aria-current={on ? "page" : undefined}
+        className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition ${
+          on ? "border-maroon bg-maroon text-shankh" : "border-ink/15 bg-white text-ink-soft hover:border-maroon hover:text-maroon"
+        }`}
+      >
+        {label}
+      </Link>
+    );
+  };
 
   return (
     <section className="container-kk py-14 sm:py-20">
@@ -37,8 +44,14 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
 
       <nav aria-label="Categories" className="-mx-4 mt-10 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
         <div className="flex gap-2 sm:flex-wrap sm:justify-center">
-          {chip("All", "/shop", !active)}
-          {categories.map((c) => chip(c, `/shop?category=${encodeURIComponent(c)}`, active === c))}
+          {chip("All", undefined, !active)}
+          {categories.map((c) => chip(c, c, active === c))}
+        </div>
+      </nav>
+
+      <nav aria-label="Sort by price" className="-mx-4 mt-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
+        <div className="flex gap-2 sm:flex-wrap sm:justify-center">
+          <PriceSortChips basePath="/shop" sort={sort} extraParams={{ category: active }} />
         </div>
       </nav>
 

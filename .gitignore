@@ -3,6 +3,11 @@ node_modules
 out
 .env
 .env.local
+.dev.vars
 *.tsbuildinfo
 .vercel
 .DS_Store
+.open-next
+.wrangler
+cloudflare-env.d.ts
+.cf-session-creds

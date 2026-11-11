@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Mulish } from "next/font/google";
-import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
 import Header from "@/components/Header";
@@ -85,7 +84,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ChatWidget />
           <PWARegister />
         </CartProvider>
-        <Analytics />
       </body>
     </html>
   );

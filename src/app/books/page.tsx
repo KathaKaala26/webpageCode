@@ -1,13 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { pricedProducts } from "@/lib/pricing";
+import { pricedProducts, sortByPrice } from "@/lib/pricing";
 import ProductCard from "@/components/ProductCard";
 import SectionHeading from "@/components/SectionHeading";
+import PriceSortChips from "@/components/PriceSortChips";
 
 export const metadata: Metadata = { title: "BOOKS" };
 
-export default async function BooksPage() {
-  const list = (await pricedProducts()).filter((p) => p.showInShop !== false && p.section === "BOOKS");
+export default async function BooksPage({ searchParams }: { searchParams: Promise<{ sort?: string }> }) {
+  const { sort } = await searchParams;
+  const list = sortByPrice(
+    (await pricedProducts()).filter((p) => p.showInShop !== false && p.section === "BOOKS"),
+    sort,
+  );
 
   if (list.length === 0) {
     return (
@@ -31,6 +36,13 @@ export default async function BooksPage() {
       <p className="mx-auto mt-6 max-w-2xl text-center text-ink-soft">
         Children&apos;s story books, sourced directly from India. Tap Enquire on any title and we&apos;ll help you arrange payment and shipping.
       </p>
+
+      <nav aria-label="Sort by price" className="-mx-4 mt-8 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
+        <div className="flex gap-2 sm:flex-wrap sm:justify-center">
+          <PriceSortChips basePath="/books" sort={sort} />
+        </div>
+      </nav>
+
       <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {list.map((p, i) => (
           <ProductCard key={p.slug} product={p} priority={i < 3} />

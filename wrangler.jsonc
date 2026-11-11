@@ -1,0 +1,61 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "katha-and-kala",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-11-09",
+  "compatibility_flags": [
+    // Enable Node.js API (crypto, pg driver, nodemailer, etc.)
+    // see https://developers.cloudflare.com/workers/configuration/compatibility-flags/#nodejs-compatibility-flag
+    "nodejs_compat",
+    // Allow fetching arbitrary public URLs (Wix CDN image proxy)
+    "global_fetch_strictly_public"
+  ],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      // Required by the DO-sharded tag cache for on-demand revalidation
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "katha-and-kala"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "NEXT_INC_CACHE_R2_BUCKET",
+      "bucket_name": "katha-and-kala-cache"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "NEXT_CACHE_DO_QUEUE",
+        "class_name": "DOQueueHandler"
+      },
+      {
+        "name": "NEXT_TAG_CACHE_DO_SHARDED",
+        "class_name": "DOShardedTagCache"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["DOQueueHandler"]
+    },
+    {
+      // D1-based tag cache (NEXT_TAG_CACHE_D1) was replaced by this DO-sharded one after the
+      // D1 tag cache silently dropped most writes under the admin panel's multi-tag
+      // revalidation bursts — see open-next.config.ts.
+      "tag": "v2",
+      "new_sqlite_classes": ["DOShardedTagCache"]
+    }
+  ],
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "4f0ac8b918164b48aac9b650a47c61be"
+    }
+  ]
+}

@@ -10,6 +10,7 @@ import { HOME_SECTIONS, HOME_SECTION_LABEL } from "@/lib/home";
 import LoginForm from "./LoginForm";
 import ImageUploadForm from "./ImageUploadForm";
 import PriceEditForm from "./PriceEditForm";
+import AvailabilityEditForm from "./AvailabilityEditForm";
 import ExchangeRateForm from "./ExchangeRateForm";
 import SizeAddForm from "./SizeAddForm";
 import DescriptionEditForm from "./DescriptionEditForm";
@@ -38,7 +39,6 @@ import {
   toggleEnquiry,
   updateHomeSections,
   updateOrderStatus,
-  updateProductAvailability,
   updateProductKind,
 } from "./actions";
 
@@ -486,15 +486,7 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
                 </div>
 
                 <div className="border-t border-ink/10 pt-3">
-                  <p className="text-xs font-bold text-ink-soft">Availability{available ? "" : " (sold out)"}</p>
-                  <form action={updateProductAvailability} className="mt-2 flex items-center gap-2">
-                    <input type="hidden" name="slug" value={p.slug} />
-                    <select name="available" defaultValue={available ? "true" : "false"} className="field h-9 w-auto py-1 text-xs">
-                      <option value="true">In stock</option>
-                      <option value="false">Sold out</option>
-                    </select>
-                    <button type="submit" className="btn-outline h-9 px-3 text-xs">Save</button>
-                  </form>
+                  <AvailabilityEditForm slug={p.slug} available={available} />
                 </div>
 
                 <div className="border-t border-ink/10 pt-3">
