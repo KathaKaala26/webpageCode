@@ -56,7 +56,10 @@ export function reply(input: string): BotReply {
       text: `Yes — cash on delivery is available in ${commerce.codCountries.length > 1 ? "the USA and Canada" : "your country"}. Choose "Cash on delivery" at checkout and pay when your artwork arrives.${
         commerce.codFeeCents ? ` A ${formatMoney(commerce.codFeeCents)} handling fee applies.` : ""
       }`,
-      actions: [{ type: "link", label: "Go to checkout", href: "/checkout" }],
+      // Cart/checkout is offline while Stripe is being set up (see InquireButton.tsx) — this
+      // used to link to /checkout, which is currently unreachable from any product page.
+      // Swap back once AddToCartButton is restored.
+      actions: [{ type: "contact" }],
     };
 
   if (has(t, "pay", "card", "stripe", "visa", "mastercard", "apple pay", "google pay", "payment"))
@@ -101,6 +104,12 @@ export function reply(input: string): BotReply {
     return {
       text: "Books are coming soon! We'll be sourcing children's story books directly from India.",
       actions: [{ type: "link", label: "Books page", href: "/books" }],
+    };
+
+  if (has(t, "puja", "pooja", "essentials", "thali", "incense", "idol", "ritual"))
+    return {
+      text: "Puja Essentials are coming soon! We're putting together a curated collection of authentic puja items, sourced directly from India.",
+      actions: [{ type: "link", label: "Puja Essentials page", href: "/puja-essentials" }],
     };
 
   if (has(t, "authentic", "real", "genuine", "original", "handmade", "artisan"))
