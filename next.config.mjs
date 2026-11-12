@@ -1,5 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Next's own bundler resolves conditional exports using Node conditions, which picks
+  // wasm-image-optimization's generic build (dynamic `WebAssembly.instantiate(bytes)`) instead
+  // of its workerd-specific one (static .wasm import, precompiled at bundle time) — Cloudflare
+  // Workers blocks the former outright ("Wasm code generation disallowed by embedder"). Marking
+  // it external here defers resolution to Wrangler's own bundler, which picks the right one.
+  // See https://opennext.js.org/cloudflare/howtos/workerd
+  serverExternalPackages: ["wasm-image-optimization"],
   experimental: {
     // Default Server Action body limit is 1MB. The admin image upload form
     // accepts files up to 5MB (see MAX_IMAGE_BYTES in admin/actions.ts), so

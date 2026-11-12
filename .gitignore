@@ -11,3 +11,4 @@ out
 .wrangler
 cloudflare-env.d.ts
 .cf-session-creds
+.env.vercel-prod

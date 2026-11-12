@@ -3,6 +3,11 @@
   "name": "katha-and-kala",
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-11-09",
+  // Paid plan's default CPU limit is still 30s (not unlimited) — raised to the 5-minute max
+  // since image compression (wasm-image-optimization) is genuinely CPU-intensive work.
+  "limits": {
+    "cpu_ms": 300000
+  },
   "compatibility_flags": [
     // Enable Node.js API (crypto, pg driver, nodemailer, etc.)
     // see https://developers.cloudflare.com/workers/configuration/compatibility-flags/#nodejs-compatibility-flag
