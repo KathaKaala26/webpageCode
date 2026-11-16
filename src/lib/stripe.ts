@@ -6,7 +6,10 @@ let client: Stripe | null = null;
 export function getStripe(): Stripe {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) throw new Error("STRIPE_SECRET_KEY is not set");
-  if (!client) client = new Stripe(key);
+  // Force the Fetch-based transport — the SDK's default Node `https` client relies on
+  // raw TCP sockets, which Cloudflare Workers doesn't support; without this the request
+  // hangs until the Workers runtime kills it, instead of erroring or succeeding.
+  if (!client) client = new Stripe(key, { httpClient: Stripe.createFetchHttpClient() });
   return client;
 }
 
