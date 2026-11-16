@@ -8,11 +8,11 @@ import { formatMoney, shippingFor } from "@/lib/format";
 import { commerce } from "@/lib/site";
 import { CloseIcon, TrashIcon } from "./Icons";
 
-export function QtyStepper({ slug, quantity }: { slug: string; quantity: number }) {
+export function QtyStepper({ slug, sizeLabel, quantity }: { slug: string; sizeLabel?: string; quantity: number }) {
   const { setQty } = useCart();
   return (
     <div className="flex h-9 items-center rounded-full border border-ink/15 bg-white" role="group" aria-label="Quantity">
-      <button type="button" className="h-full w-9 text-lg" onClick={() => setQty(slug, quantity - 1)} aria-label="Decrease quantity">
+      <button type="button" className="h-full w-9 text-lg" onClick={() => setQty(slug, quantity - 1, sizeLabel)} aria-label="Decrease quantity">
         −
       </button>
       <span className="w-6 text-center text-sm font-bold">{quantity}</span>
@@ -20,7 +20,7 @@ export function QtyStepper({ slug, quantity }: { slug: string; quantity: number 
         type="button"
         className="h-full w-9 text-lg disabled:opacity-30"
         disabled={quantity >= commerce.maxQtyPerItem}
-        onClick={() => setQty(slug, quantity + 1)}
+        onClick={() => setQty(slug, quantity + 1, sizeLabel)}
         aria-label="Increase quantity"
       >
         +
@@ -82,18 +82,19 @@ export default function CartDrawer() {
         ) : (
           <>
             <ul className="flex-1 divide-y divide-ink/10 overflow-y-auto px-5">
-              {lines.map(({ product, quantity, lineCents }) => (
-                <li key={product.slug} className="flex gap-4 py-4">
-                  <Link href={`/shop/${product.slug}`} onClick={closeDrawer} className="relative h-24 w-20 shrink-0 overflow-hidden rounded-lg bg-shankh-dark">
-                    <Image src={product.image} alt={product.title} fill sizes="80px" className="object-cover" />
+              {lines.map((l) => (
+                <li key={`${l.slug}::${l.sizeLabel ?? ""}`} className="flex gap-4 py-4">
+                  <Link href={`/shop/${l.slug}`} onClick={closeDrawer} className="relative h-24 w-20 shrink-0 overflow-hidden rounded-lg bg-shankh-dark">
+                    <Image src={l.image} alt={l.title} fill sizes="80px" className="object-cover" />
                   </Link>
                   <div className="flex min-w-0 flex-1 flex-col">
-                    <p className="text-[11px] font-bold tracking-wider text-sindoor">{product.purchaseCode}</p>
-                    <p className="truncate font-display text-lg font-semibold text-maroon">{product.title}</p>
+                    <p className="text-[11px] font-bold tracking-wider text-sindoor">{l.purchaseCode}</p>
+                    <p className="truncate font-display text-lg font-semibold text-maroon">{l.title}</p>
+                    {l.sizeLabel && <p className="text-xs text-ink-soft">{l.sizeLabel}</p>}
                     <div className="mt-auto flex items-center justify-between gap-2">
-                      <QtyStepper slug={product.slug} quantity={quantity} />
-                      <span className="font-bold">{formatMoney(lineCents)}</span>
-                      <button type="button" onClick={() => remove(product.slug)} className="grid h-9 w-9 place-items-center rounded-full text-ink/50 hover:bg-sindoor/10 hover:text-sindoor" aria-label={`Remove ${product.title}`}>
+                      <QtyStepper slug={l.slug} sizeLabel={l.sizeLabel} quantity={l.quantity} />
+                      <span className="font-bold">{formatMoney(l.lineCents)}</span>
+                      <button type="button" onClick={() => remove(l.slug, l.sizeLabel)} className="grid h-9 w-9 place-items-center rounded-full text-ink/50 hover:bg-sindoor/10 hover:text-sindoor" aria-label={`Remove ${l.title}`}>
                         <TrashIcon className="h-4 w-4" />
                       </button>
                     </div>

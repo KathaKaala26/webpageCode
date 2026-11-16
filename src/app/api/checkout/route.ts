@@ -41,8 +41,8 @@ export async function POST(req: Request) {
     const rate = isGBP ? await getUsdToGbpRate() : 1;
 
     const chargedLines = priced.lines.map((l) => {
-      const unitCents = isGBP ? Math.round(l.product.priceCents * rate) : l.product.priceCents;
-      return { ...l, product: { ...l.product, priceCents: unitCents }, lineCents: unitCents * l.quantity };
+      const unitCents = isGBP ? Math.round(l.unitPriceCents * rate) : l.unitPriceCents;
+      return { ...l, unitPriceCents: unitCents, lineCents: unitCents * l.quantity };
     });
     const subtotalCents = chargedLines.reduce((s, l) => s + l.lineCents, 0);
     const shippingCents = isGBP ? Math.round(priced.shippingCents * rate) : priced.shippingCents;
@@ -53,20 +53,24 @@ export async function POST(req: Request) {
     });
 
     const base = siteUrl(req);
-    const line_items = chargedPriced.lines.map((l) => ({
-      quantity: l.quantity,
-      price_data: {
-        currency: chargeCurrency,
-        unit_amount: l.product.priceCents,
-        product_data: {
-          // Stripe rejects an empty product name — admins can blank a title
-          // for display, but checkout still needs something non-empty.
-          name: l.product.title || l.product.purchaseCode,
-          description: `Purchase code ${l.product.purchaseCode}`,
-          images: [base + l.product.image],
+    const line_items = chargedPriced.lines.map((l) => {
+      // Stripe rejects an empty product name — admins can blank a title
+      // for display, but checkout still needs something non-empty.
+      const baseName = l.product.title || l.product.purchaseCode;
+      const name = (l.sizeLabel ? `${baseName} — ${l.sizeLabel}` : baseName).slice(0, 250); // Stripe's product_data.name limit
+      return {
+        quantity: l.quantity,
+        price_data: {
+          currency: chargeCurrency,
+          unit_amount: l.unitPriceCents,
+          product_data: {
+            name,
+            description: `Purchase code ${l.product.purchaseCode}`,
+            images: [base + l.product.image],
+          },
         },
-      },
-    }));
+      };
+    });
 
     const session = await getStripe().checkout.sessions.create({
       mode: "payment",

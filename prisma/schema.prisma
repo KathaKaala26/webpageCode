@@ -72,6 +72,7 @@ model OrderItem {
   purchaseCode   String
   title          String
   image          String
+  sizeLabel      String?
   unitPriceCents Int
   quantity       Int
 }

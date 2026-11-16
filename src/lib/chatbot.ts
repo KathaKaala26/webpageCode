@@ -56,10 +56,7 @@ export function reply(input: string): BotReply {
       text: `Yes — cash on delivery is available in ${commerce.codCountries.length > 1 ? "the USA and Canada" : "your country"}. Choose "Cash on delivery" at checkout and pay when your artwork arrives.${
         commerce.codFeeCents ? ` A ${formatMoney(commerce.codFeeCents)} handling fee applies.` : ""
       }`,
-      // Cart/checkout is offline while Stripe is being set up (see InquireButton.tsx) — this
-      // used to link to /checkout, which is currently unreachable from any product page.
-      // Swap back once AddToCartButton is restored.
-      actions: [{ type: "contact" }],
+      actions: [{ type: "link", label: "Go to checkout", href: "/checkout" }],
     };
 
   if (has(t, "pay", "card", "stripe", "visa", "mastercard", "apple pay", "google pay", "payment"))

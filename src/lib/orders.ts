@@ -3,7 +3,7 @@ import { commerce } from "./site";
 import { shippingFor } from "./format";
 import { pricedProduct, type CatalogProduct } from "./pricing";
 
-export type CheckoutItemInput = { slug: string; quantity: number };
+export type CheckoutItemInput = { slug: string; quantity: number; sizeLabel?: string };
 
 export type CustomerInput = {
   name: string;
@@ -18,7 +18,7 @@ export type CustomerInput = {
   notes?: string;
 };
 
-export type PricedLine = { product: CatalogProduct; quantity: number; lineCents: number };
+export type PricedLine = { product: CatalogProduct; quantity: number; sizeLabel?: string; unitPriceCents: number; lineCents: number };
 
 export type PricedOrder = {
   lines: PricedLine[];
@@ -61,19 +61,31 @@ export function parseCustomer(raw: unknown): CustomerInput {
  *  admin price override) — the browser only sends slugs and quantities. */
 export async function priceItems(raw: unknown, paymentMethod: "STRIPE" | "COD"): Promise<PricedOrder> {
   if (!Array.isArray(raw) || raw.length === 0) throw new CheckoutError("Your cart is empty.");
-  const merged = new Map<string, number>();
+  const merged = new Map<string, { slug: string; sizeLabel?: string; quantity: number }>();
   for (const it of raw as CheckoutItemInput[]) {
     const slug = typeof it?.slug === "string" ? it.slug : "";
+    const sizeLabel = typeof it?.sizeLabel === "string" && it.sizeLabel ? it.sizeLabel : undefined;
     const q = Math.floor(Number(it?.quantity));
     if (!slug || !Number.isFinite(q) || q < 1) continue;
-    merged.set(slug, Math.min((merged.get(slug) ?? 0) + q, commerce.maxQtyPerItem));
+    const key = `${slug}::${sizeLabel ?? ""}`;
+    const existing = merged.get(key);
+    merged.set(key, { slug, sizeLabel, quantity: Math.min((existing?.quantity ?? 0) + q, commerce.maxQtyPerItem) });
   }
   const lines: PricedLine[] = [];
-  for (const [slug, quantity] of merged) {
+  for (const { slug, sizeLabel, quantity } of merged.values()) {
     const product = await pricedProduct(slug);
     if (!product) throw new CheckoutError("An item in your cart is no longer available.");
     if (!product.available) throw new CheckoutError(`"${product.title}" has just sold out.`);
-    lines.push({ product, quantity, lineCents: product.priceCents * quantity });
+    const hasSizes = product.kind === "ART_FRAME" && product.sizes.length > 0;
+    let unitPriceCents = product.priceCents;
+    if (hasSizes) {
+      const size = product.sizes.find((s) => s.label === sizeLabel);
+      if (!size) throw new CheckoutError(`"${product.title}" needs a size selection — please re-select it in your cart.`);
+      unitPriceCents = size.priceCents;
+    } else if (sizeLabel) {
+      throw new CheckoutError(`"${product.title}" no longer has size options — please re-add it to your cart.`);
+    }
+    lines.push({ product, quantity, sizeLabel, unitPriceCents, lineCents: unitPriceCents * quantity });
   }
   if (!lines.length) throw new CheckoutError("Your cart is empty.");
   const subtotalCents = lines.reduce((s, l) => s + l.lineCents, 0);
@@ -111,7 +123,8 @@ export function orderData(customer: CustomerInput, priced: PricedOrder) {
         purchaseCode: l.product.purchaseCode,
         title: l.product.title,
         image: l.product.image,
-        unitPriceCents: l.product.priceCents,
+        sizeLabel: l.sizeLabel ?? null,
+        unitPriceCents: l.unitPriceCents,
         quantity: l.quantity,
       })),
     },

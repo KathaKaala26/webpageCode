@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { CatalogProduct } from "@/lib/pricing";
 import { titleWithoutCode } from "@/lib/products";
 import { formatMoney } from "@/lib/format";
-import InquireButton from "./InquireButton";
+import AddToCartButton from "./AddToCartButton";
 
 export default function ProductCard({
   product,
@@ -68,7 +68,13 @@ export default function ProductCard({
             <span className="text-lg font-extrabold text-ink">
               {hasSizes ? `From ${formatMoney(fromPriceCents)}` : formatMoney(fromPriceCents)}
             </span>
-            <InquireButton title={product.title} available={product.available} compact />
+            {hasSizes ? (
+              <Link href={`/shop/${product.slug}`} className="btn-outline px-4">
+                Choose size
+              </Link>
+            ) : (
+              <AddToCartButton slug={product.slug} available={product.available} compact />
+            )}
           </div>
         )}
       </div>

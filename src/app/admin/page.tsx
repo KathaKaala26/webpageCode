@@ -285,7 +285,8 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
                       <ul className="space-y-1">
                         {o.items.map((it) => (
                           <li key={it.id}>
-                            {it.quantity} × {it.title} <span className="text-ink-soft">({it.purchaseCode})</span>
+                            {it.quantity} × {it.title}
+                            {it.sizeLabel && <> — {it.sizeLabel}</>} <span className="text-ink-soft">({it.purchaseCode})</span>
                           </li>
                         ))}
                       </ul>

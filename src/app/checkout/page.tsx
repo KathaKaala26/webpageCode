@@ -54,7 +54,7 @@ export default function CheckoutPage() {
         body: JSON.stringify({
           paymentMethod: effectiveMethod,
           customer,
-          items: lines.map((l) => ({ slug: l.product.slug, quantity: l.quantity })),
+          items: lines.map((l) => ({ slug: l.slug, sizeLabel: l.sizeLabel, quantity: l.quantity })),
         }),
       });
       const data = (await res.json().catch(() => ({}))) as { url?: string; orderId?: string; error?: string };
@@ -183,17 +183,20 @@ export default function CheckoutPage() {
           <div className="card space-y-4 p-5 sm:p-6 lg:sticky lg:top-24">
             <h2 className="text-2xl font-semibold">Order summary</h2>
             <ul className="divide-y divide-ink/10">
-              {lines.map(({ product, quantity, lineCents }) => (
-                <li key={product.slug} className="flex items-center gap-3 py-3">
+              {lines.map((l) => (
+                <li key={`${l.slug}::${l.sizeLabel ?? ""}`} className="flex items-center gap-3 py-3">
                   <div className="relative h-16 w-14 shrink-0 overflow-hidden rounded-lg bg-shankh-dark">
-                    <Image src={product.image} alt="" fill sizes="56px" className="object-cover" />
-                    <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-maroon px-1 text-[11px] font-bold text-white">{quantity}</span>
+                    <Image src={l.image} alt="" fill sizes="56px" className="object-cover" />
+                    <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-maroon px-1 text-[11px] font-bold text-white">{l.quantity}</span>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold">{product.title}</p>
-                    <p className="text-xs text-ink-soft">{product.purchaseCode}</p>
+                    <p className="truncate text-sm font-semibold">{l.title}</p>
+                    <p className="text-xs text-ink-soft">
+                      {l.purchaseCode}
+                      {l.sizeLabel && <> · {l.sizeLabel}</>}
+                    </p>
                   </div>
-                  <span className="text-sm font-bold">{formatMoney(lineCents)}</span>
+                  <span className="text-sm font-bold">{formatMoney(l.lineCents)}</span>
                 </li>
               ))}
             </ul>

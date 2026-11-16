@@ -7,7 +7,7 @@ import { pricedProduct, pricedProducts, productVideoFor } from "@/lib/pricing";
 import { formatMoney } from "@/lib/format";
 import { commerce } from "@/lib/site";
 import { siteUrl } from "@/lib/stripe";
-import InquireButton from "@/components/InquireButton";
+import AddToCartButton from "@/components/AddToCartButton";
 import SizeSelector from "@/components/SizeSelector";
 import WallPreviewButton from "@/components/WallPreviewButton";
 import ProductCard from "@/components/ProductCard";
@@ -87,7 +87,7 @@ export default async function ProductPage({ params }: Params) {
             <h1 className="mt-2 text-4xl font-semibold leading-tight sm:text-5xl">{p.title}</h1>
 
             {p.kind === "ART_FRAME" && p.sizes.length > 0 ? (
-              <SizeSelector title={p.title} available={p.available} sizes={p.sizes} />
+              <SizeSelector slug={p.slug} available={p.available} sizes={p.sizes} />
             ) : (
               <p className="mt-5 text-3xl font-extrabold text-ink">{formatMoney(p.priceCents)}</p>
             )}
@@ -95,7 +95,7 @@ export default async function ProductPage({ params }: Params) {
             {p.description && <p className="mt-6 leading-relaxed text-ink-soft">{p.description}</p>}
 
             <div className="mt-8">
-              {!(p.kind === "ART_FRAME" && p.sizes.length > 0) && <InquireButton title={p.title} available={p.available} />}
+              {!(p.kind === "ART_FRAME" && p.sizes.length > 0) && <AddToCartButton slug={p.slug} available={p.available} withQty />}
               <WallPreviewButton artSrc={p.image} artAlt={p.title} />
             </div>
 
@@ -109,7 +109,7 @@ export default async function ProductPage({ params }: Params) {
               </li>
               <li className="flex items-start gap-3">
                 <CardIcon className="mt-0.5 h-5 w-5 shrink-0 text-sindoor" />
-                <span>Message us to reserve this piece — we'll arrange payment and shipping</span>
+                <span>Pay securely by card or choose cash on delivery</span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-sindoor text-[10px] font-bold text-white">✓</span>

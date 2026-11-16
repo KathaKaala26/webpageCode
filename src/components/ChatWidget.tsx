@@ -9,6 +9,8 @@ import { QUICK_START, reply, type BotAction } from "@/lib/chatbot";
 import { formatMoney } from "@/lib/format";
 import { site } from "@/lib/site";
 import { usePriceOverrides } from "@/lib/usePriceOverrides";
+import { useCartCatalog } from "@/lib/useCartCatalog";
+import { useCart } from "@/context/CartContext";
 import { ChatIcon, CloseIcon, KKMark, SendIcon } from "./Icons";
 
 type Msg = {
@@ -31,6 +33,8 @@ const WELCOME: Msg = {
 export default function ChatWidget() {
   const pathname = usePathname();
   const priceOverrides = usePriceOverrides();
+  const catalog = useCartCatalog();
+  const { add, openDrawer } = useCart();
   const [open, setOpen] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([WELCOME]);
   const [input, setInput] = useState("");
@@ -157,16 +161,26 @@ export default function ChatWidget() {
                           <p className="truncate text-sm font-bold">{p.title}</p>
                           <p className="text-xs text-ink-soft">{p.purchaseCode} · {formatMoney(priceOverrides[p.slug] ?? p.priceCents)}</p>
                           {p.available ? (
-                            // Matches the sitewide Enquire-only mode (InquireButton.tsx) — cart/checkout
-                            // is offline while Stripe is being set up. Swap back to add(p.slug) once
-                            // AddToCartButton is restored elsewhere.
-                            <Link
-                              href={`/contact?title=${encodeURIComponent(p.title)}`}
-                              onClick={() => window.innerWidth < 640 && setOpen(false)}
-                              className="mt-1 text-xs font-extrabold text-sindoor hover:underline"
-                            >
-                              Enquire
-                            </Link>
+                            catalog[p.slug]?.kind === "ART_FRAME" && catalog[p.slug].sizes.length > 0 ? (
+                              <Link
+                                href={`/shop/${p.slug}`}
+                                onClick={() => window.innerWidth < 640 && setOpen(false)}
+                                className="mt-1 text-xs font-extrabold text-sindoor hover:underline"
+                              >
+                                Choose size →
+                              </Link>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  add(p.slug);
+                                  openDrawer();
+                                }}
+                                className="mt-1 text-xs font-extrabold text-sindoor hover:underline"
+                              >
+                                Add to cart
+                              </button>
+                            )
                           ) : (
                             <span className="mt-1 text-xs font-bold text-ink/50">Sold</span>
                           )}

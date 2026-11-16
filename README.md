@@ -43,11 +43,11 @@ Supabase Postgres + Storage · Stripe Checkout · Vercel · Vercel Analytics
 1. **Set real prices** — every `priceCents` in `src/lib/products.ts` is a
    placeholder (`12900` = $129.00), or override them live from `/admin` →
    Products without a redeploy. Set `available: false` when a piece sells.
-2. **Switch Stripe to live mode** — the site currently runs on a Stripe
-   **test** key. Until then, `/contact` and a banner on `/cart` point
-   customers to phone/email for real orders. Swap `STRIPE_SECRET_KEY` /
-   `STRIPE_WEBHOOK_SECRET` for live-mode values and remove the
-   `<PaymentNotice />` line in `src/app/cart/page.tsx` once ready.
+2. ✅ **Switch Stripe to live mode** — `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET`
+   are set to the live-mode values of the business's Stripe account, with a
+   webhook endpoint registered for the production domain. Real cart/checkout
+   (including per-size art-frame checkout) is live; the old "Enquire"/COD-only
+   placeholder mode and `<PaymentNotice />` banner have been removed.
 3. **Check the GBP exchange rate** — `/admin` → Products → "UK checkout
    exchange rate" is seeded with a placeholder; set it to the real current rate.
 4. **Shipping / COD fee / countries** — `commerce` in `src/lib/site.ts`
@@ -169,13 +169,15 @@ local/CLI session still works as a manual fallback.
 - Stored in `localStorage` (`kk_cart_v1`) so it survives reloads, works offline
   and syncs between tabs and the installed app.
 - Slide-out cart drawer from the header bag icon, plus a full `/cart` page.
-- A banner on `/cart` points customers to phone/email while Stripe is in test
-  mode (`src/components/PaymentNotice.tsx` — remove once card payments go live).
+- Cart lines are keyed by `(slug, sizeLabel)` — a sized art-frame product
+  added in two different sizes shows as two separate lines, each capped at
+  `commerce.maxQtyPerItem` independently.
 
 ### Checkout & payments
 - One form for both methods (`/checkout`). The browser sends only product
-  slugs + quantities; **prices are always recalculated on the server** from
-  `products.ts` plus any admin override, so they can't be tampered with.
+  slugs + sizeLabel + quantities; **prices are always recalculated on the
+  server** from `products.ts` plus any admin override/size, so they can't be
+  tampered with.
 - **Card (Stripe):** order saved as `PENDING_PAYMENT` → Stripe Checkout →
   webhook / success page marks it `PAID`. Supports Apple Pay & Google Pay
   automatically (enable them in Stripe → Settings → Payment methods).

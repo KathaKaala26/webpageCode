@@ -70,7 +70,10 @@ export default async function OrderSuccessPage({ searchParams }: { searchParams:
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate font-semibold">{it.title}</p>
-                <p className="text-xs text-ink-soft">{it.purchaseCode} · Qty {it.quantity}</p>
+                <p className="text-xs text-ink-soft">
+                  {it.purchaseCode}
+                  {it.sizeLabel && <> · {it.sizeLabel}</>} · Qty {it.quantity}
+                </p>
               </div>
               <span className="font-bold">{formatMoney(it.unitPriceCents * it.quantity, order.currency)}</span>
             </li>

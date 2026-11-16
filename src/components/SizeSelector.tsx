@@ -1,19 +1,21 @@
 "use client";
 
 import { useState } from "react";
+import { useCart } from "@/context/CartContext";
 import { formatMoney } from "@/lib/format";
 import type { SizeOption } from "@/lib/pricing";
-import InquireButton from "./InquireButton";
+import { BagIcon } from "./Icons";
 
 export default function SizeSelector({
-  title,
+  slug,
   available,
   sizes,
 }: {
-  title: string;
+  slug: string;
   available: boolean;
   sizes: SizeOption[];
 }) {
+  const { add, openDrawer } = useCart();
   const [selected, setSelected] = useState(0);
   const size = sizes[selected];
 
@@ -38,7 +40,23 @@ export default function SizeSelector({
       </div>
 
       <div className="mt-6">
-        <InquireButton title={`${title} — ${size.label}`} available={available} />
+        {available ? (
+          <button
+            type="button"
+            onClick={() => {
+              add(slug, 1, size.label);
+              openDrawer();
+            }}
+            className="btn-primary h-12 w-full"
+          >
+            <BagIcon className="h-5 w-5" />
+            Add to cart
+          </button>
+        ) : (
+          <button type="button" disabled className="btn-outline w-full">
+            Sold
+          </button>
+        )}
       </div>
     </div>
   );

@@ -6,7 +6,6 @@ import { useCart } from "@/context/CartContext";
 import { formatMoney, shippingFor } from "@/lib/format";
 import { QtyStepper } from "@/components/CartDrawer";
 import { TrashIcon } from "@/components/Icons";
-import PaymentNotice from "@/components/PaymentNotice";
 
 export default function CartPage() {
   const { lines, subtotalCents, remove, ready } = useCart();
@@ -15,10 +14,6 @@ export default function CartPage() {
   return (
     <section className="container-kk py-12 sm:py-16">
       <h1 className="text-4xl font-semibold sm:text-5xl">Your Cart</h1>
-
-      <div className="mt-6">
-        <PaymentNotice />
-      </div>
 
       {!ready ? (
         <div className="mt-10 h-40 animate-pulse rounded-2xl bg-white" />
@@ -32,27 +27,28 @@ export default function CartPage() {
       ) : (
         <div className="mt-10 grid gap-8 lg:grid-cols-3">
           <ul className="card divide-y divide-ink/10 lg:col-span-2">
-            {lines.map(({ product, quantity, lineCents }) => (
-              <li key={product.slug} className="flex gap-4 p-4 sm:p-5">
-                <Link href={`/shop/${product.slug}`} className="relative h-28 w-24 shrink-0 overflow-hidden rounded-xl bg-shankh-dark sm:h-32 sm:w-28">
-                  <Image src={product.image} alt={product.title} fill sizes="112px" className="object-cover" />
+            {lines.map((l) => (
+              <li key={`${l.slug}::${l.sizeLabel ?? ""}`} className="flex gap-4 p-4 sm:p-5">
+                <Link href={`/shop/${l.slug}`} className="relative h-28 w-24 shrink-0 overflow-hidden rounded-xl bg-shankh-dark sm:h-32 sm:w-28">
+                  <Image src={l.image} alt={l.title} fill sizes="112px" className="object-cover" />
                 </Link>
                 <div className="flex min-w-0 flex-1 flex-col gap-2">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="text-[11px] font-bold tracking-wider text-sindoor">{product.purchaseCode}</p>
-                      <Link href={`/shop/${product.slug}`} className="font-display text-xl font-semibold text-maroon hover:text-sindoor">
-                        {product.title}
+                      <p className="text-[11px] font-bold tracking-wider text-sindoor">{l.purchaseCode}</p>
+                      <Link href={`/shop/${l.slug}`} className="font-display text-xl font-semibold text-maroon hover:text-sindoor">
+                        {l.title}
                       </Link>
-                      <p className="text-sm text-ink-soft">{formatMoney(product.priceCents)} each</p>
+                      {l.sizeLabel && <p className="text-sm text-ink-soft">{l.sizeLabel}</p>}
+                      <p className="text-sm text-ink-soft">{formatMoney(l.lineCents / l.quantity)} each</p>
                     </div>
-                    <button type="button" onClick={() => remove(product.slug)} className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-ink/50 hover:bg-sindoor/10 hover:text-sindoor" aria-label={`Remove ${product.title}`}>
+                    <button type="button" onClick={() => remove(l.slug, l.sizeLabel)} className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-ink/50 hover:bg-sindoor/10 hover:text-sindoor" aria-label={`Remove ${l.title}`}>
                       <TrashIcon />
                     </button>
                   </div>
                   <div className="mt-auto flex items-center justify-between">
-                    <QtyStepper slug={product.slug} quantity={quantity} />
-                    <span className="text-lg font-extrabold">{formatMoney(lineCents)}</span>
+                    <QtyStepper slug={l.slug} sizeLabel={l.sizeLabel} quantity={l.quantity} />
+                    <span className="text-lg font-extrabold">{formatMoney(l.lineCents)}</span>
                   </div>
                 </div>
               </li>

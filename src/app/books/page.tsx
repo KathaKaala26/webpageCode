@@ -34,7 +34,7 @@ export default async function BooksPage({ searchParams }: { searchParams: Promis
     <section className="container-kk py-14 sm:py-20">
       <SectionHeading as="h1" title="Books" />
       <p className="mx-auto mt-6 max-w-2xl text-center text-ink-soft">
-        Children&apos;s story books, sourced directly from India. Tap Enquire on any title and we&apos;ll help you arrange payment and shipping.
+        Children&apos;s story books, sourced directly from India. Add a title to your cart to purchase by card or cash on delivery.
       </p>
 
       <nav aria-label="Sort by price" className="-mx-4 mt-8 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">

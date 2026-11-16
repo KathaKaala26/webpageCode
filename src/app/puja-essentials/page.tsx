@@ -36,7 +36,7 @@ export default async function PujaEssentialsPage({ searchParams }: { searchParam
     <section className="container-kk py-14 sm:py-20">
       <SectionHeading as="h1" title="Puja Essentials" />
       <p className="mx-auto mt-6 max-w-2xl text-center text-ink-soft">
-        Authentic puja essentials, sourced directly from India. Tap Enquire on any piece and we&apos;ll help you arrange payment and shipping.
+        Authentic puja essentials, sourced directly from India. Add a piece to your cart to purchase by card or cash on delivery.
       </p>
 
       <nav aria-label="Sort by price" className="-mx-4 mt-8 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
