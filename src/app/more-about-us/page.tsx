@@ -6,7 +6,13 @@ import { siteVideo } from "@/lib/pricing";
 import SectionHeading from "@/components/SectionHeading";
 import ProductVideoPlayer from "@/components/ProductVideoPlayer";
 
-export const metadata: Metadata = { title: "MORE ABOUT US" };
+export const metadata: Metadata = {
+  title: "About Us — Authentic Indian Art from Odisha",
+  description:
+    "Learn about Katha & Kaala — sharing authentic Pattachitra, palm-leaf art and Indian culture from Odisha with the USA, Canada & UK.",
+  alternates: { canonical: "/more-about-us" },
+  openGraph: { url: "/more-about-us" },
+};
 
 export default async function MoreAboutUsPage() {
   const video = await siteVideo();

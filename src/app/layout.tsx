@@ -24,14 +24,24 @@ const body = Mulish({
   display: "swap",
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
 const orgJsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
   name: site.name,
   description: site.description,
-  url: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+  url: siteUrl,
+  logo: `${siteUrl}/icons/icon-512.png`,
   areaServed: commerce.shipCountries.map((c) => c.code),
   address: { "@type": "PostalAddress", addressLocality: "Minneapolis", addressRegion: "MN", addressCountry: "US" },
+};
+
+const webSiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: site.name,
+  url: siteUrl,
 };
 
 export const metadata: Metadata = {
@@ -51,7 +61,15 @@ export const metadata: Metadata = {
     ],
     apple: "/icons/apple-touch-icon.png",
   },
-  openGraph: { siteName: site.name, type: "website", title: site.name, description: site.description },
+  openGraph: {
+    siteName: site.name,
+    type: "website",
+    title: site.name,
+    description: site.description,
+    url: "/",
+    images: ["/icons/icon-512.png"],
+  },
+  twitter: { card: "summary_large_image", title: site.name, description: site.description },
   formatDetection: { telephone: false },
 };
 
@@ -66,10 +84,27 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${display.variable} ${body.variable}`}>
       <head>
+        {/* Google Tag Manager — must stay the first thing in <head> per Google's install instructions */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-TPPX9PXW');`,
+          }}
+        />
         <link rel="preconnect" href="https://static.wixstatic.com" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(webSiteJsonLd) }} />
       </head>
       <body className="flex min-h-dvh flex-col" suppressHydrationWarning>
+        {/* Google Tag Manager (noscript) — must stay the first thing in <body> */}
+        <noscript>
+          <iframe
+            src="https://www.googletagmanager.com/ns.html?id=GTM-TPPX9PXW"
+            height="0"
+            width="0"
+            style={{ display: "none", visibility: "hidden" }}
+            title="Google Tag Manager"
+          />
+        </noscript>
         <CartProvider>
           <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100] focus:rounded focus:bg-white focus:px-4 focus:py-2">
             Skip to content

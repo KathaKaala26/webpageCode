@@ -1,12 +1,24 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { pricedProducts, sortByPrice } from "@/lib/pricing";
+import { breadcrumbJsonLd } from "@/lib/seo";
 import ProductCard from "@/components/ProductCard";
 import SectionHeading from "@/components/SectionHeading";
 import PriceSortChips from "@/components/PriceSortChips";
 
-export const metadata: Metadata = { title: "SHOP" };
+export const metadata: Metadata = {
+  title: "Shop Pattachitra & Indian Art Online",
+  description:
+    "Shop authentic, handmade Pattachitra paintings and palm-leaf art — buy Indian art online, sourced directly from artisans in India. Ships to the USA, Canada & UK.",
+  alternates: { canonical: "/shop" },
+  openGraph: { url: "/shop" },
+};
 export const dynamic = "force-dynamic";
+
+const breadcrumbs = breadcrumbJsonLd([
+  { name: "Home", path: "/" },
+  { name: "Shop", path: "/shop" },
+]);
 
 export default async function ShopPage({ searchParams }: { searchParams: Promise<{ category?: string; sort?: string }> }) {
   const { category, sort } = await searchParams;
@@ -37,6 +49,7 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
 
   return (
     <section className="container-kk py-14 sm:py-20">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }} />
       <SectionHeading as="h1" eyebrow="Online Store" title="Shop the Collection" />
       <p className="mx-auto mt-6 max-w-2xl text-center text-ink-soft">
         Every piece is sourced directly from artisans in India. Add a piece to your cart to purchase by card or cash on delivery.

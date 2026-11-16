@@ -1,11 +1,22 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { pricedProducts, sortByPrice } from "@/lib/pricing";
+import { breadcrumbJsonLd } from "@/lib/seo";
 import ProductCard from "@/components/ProductCard";
 import SectionHeading from "@/components/SectionHeading";
 import PriceSortChips from "@/components/PriceSortChips";
 
-export const metadata: Metadata = { title: "PUJA ESSENTIALS" };
+export const metadata: Metadata = {
+  title: "Authentic Puja Essentials from India",
+  description: "Authentic puja essentials — thalis, incense, idols and more — sourced directly from India. Ships to the USA, Canada & UK.",
+  alternates: { canonical: "/puja-essentials" },
+  openGraph: { url: "/puja-essentials" },
+};
+
+const breadcrumbs = breadcrumbJsonLd([
+  { name: "Home", path: "/" },
+  { name: "Puja Essentials", path: "/puja-essentials" },
+]);
 
 export default async function PujaEssentialsPage({ searchParams }: { searchParams: Promise<{ sort?: string }> }) {
   const { sort } = await searchParams;
@@ -17,6 +28,7 @@ export default async function PujaEssentialsPage({ searchParams }: { searchParam
   if (list.length === 0) {
     return (
       <section className="container-kk py-20 sm:py-28">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }} />
         <SectionHeading as="h1" title="Puja Essentials ..... Coming SOON !" />
         <p className="mx-auto mt-10 max-w-3xl text-center text-lg leading-relaxed text-ink-soft">
           We&apos;re putting together a curated collection of authentic puja essentials — sourced directly from India
@@ -34,6 +46,7 @@ export default async function PujaEssentialsPage({ searchParams }: { searchParam
 
   return (
     <section className="container-kk py-14 sm:py-20">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }} />
       <SectionHeading as="h1" title="Puja Essentials" />
       <p className="mx-auto mt-6 max-w-2xl text-center text-ink-soft">
         Authentic puja essentials, sourced directly from India. Add a piece to your cart to purchase by card or cash on delivery.

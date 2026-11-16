@@ -49,6 +49,12 @@ export function titleWithoutCode(title: string): string {
   return title.replace(/\s+—\s+.*$/, "");
 }
 
+/** Descriptive, keyword-relevant alt text for a product image — more useful to search engines
+ *  and screen readers than the raw catalogue title alone. */
+export function productAltText(p: { title: string; category: string }): string {
+  return `${titleWithoutCode(p.title)} — ${p.category} Pattachitra art, handcrafted in India`;
+}
+
 const PALM_LEAF =
   "Experience the beauty of a one-of-a-kind masterpiece, meticulously crafted by skilled artisans. Each piece undergoes a painstaking process that takes weeks, involving careful drying, intricate painting, and precise stitching. This dedication ensures that every artwork is unique, reflecting the passion and expertise of its creators. Bring home a true work of art on a simple palm leaf that tells a story of creativity.";
 

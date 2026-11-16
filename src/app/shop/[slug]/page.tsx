@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { products } from "@/lib/products";
+import { productAltText, products } from "@/lib/products";
 import { pricedProduct, pricedProducts, productVideoFor } from "@/lib/pricing";
 import { formatMoney } from "@/lib/format";
-import { commerce } from "@/lib/site";
+import { commerce, site } from "@/lib/site";
 import { siteUrl } from "@/lib/stripe";
+import { breadcrumbJsonLd } from "@/lib/seo";
 import AddToCartButton from "@/components/AddToCartButton";
 import SizeSelector from "@/components/SizeSelector";
 import WallPreviewButton from "@/components/WallPreviewButton";
@@ -26,7 +27,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   return {
     title: `${p.title} (${p.purchaseCode})`,
     description: p.description.slice(0, 160),
-    openGraph: { images: [{ url: siteUrl() + p.image }] },
+    alternates: { canonical: `/shop/${p.slug}` },
+    openGraph: { url: `/shop/${p.slug}`, images: [{ url: siteUrl() + p.image }] },
   };
 }
 
@@ -47,6 +49,7 @@ export default async function ProductPage({ params }: Params) {
     sku: p.purchaseCode,
     category: p.category,
     image: siteUrl() + p.image,
+    brand: { "@type": "Brand", name: site.name },
     offers: {
       "@type": "Offer",
       priceCurrency: commerce.currency.toUpperCase(),
@@ -56,9 +59,17 @@ export default async function ProductPage({ params }: Params) {
     },
   };
 
+  const breadcrumbs = breadcrumbJsonLd([
+    { name: "Home", path: "/" },
+    { name: "Shop", path: "/shop" },
+    { name: p.category, path: `/shop?category=${encodeURIComponent(p.category)}` },
+    { name: p.title, path: `/shop/${p.slug}` },
+  ]);
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }} />
       <div className="container-kk py-8 sm:py-14">
         <nav aria-label="Breadcrumb" className="mb-6 text-sm text-ink-soft">
           <Link href="/shop" className="hover:text-sindoor">
@@ -73,7 +84,7 @@ export default async function ProductPage({ params }: Params) {
         <div className="grid gap-8 lg:grid-cols-2 lg:gap-14">
           <div className="lg:sticky lg:top-24 lg:self-start">
             <div className="relative aspect-[4/5] overflow-hidden rounded-3xl bg-shankh-dark shadow-card">
-              <Image src={p.image} alt={p.title} fill priority sizes="(min-width:1024px) 48vw, 100vw" className="object-contain" />
+              <Image src={p.image} alt={productAltText(p)} fill priority sizes="(min-width:1024px) 48vw, 100vw" className="object-contain" />
             </div>
             {video && (
               <div className="relative mt-6 aspect-video overflow-hidden rounded-3xl bg-shankh-dark shadow-card">

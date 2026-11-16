@@ -1,10 +1,13 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { products, titleWithoutCode, WIX } from "@/lib/products";
+import { productAltText, products, titleWithoutCode, WIX } from "@/lib/products";
 import { pricedProducts } from "@/lib/pricing";
 import { homeSections } from "@/lib/home";
 import ProductCard from "@/components/ProductCard";
 import SectionHeading from "@/components/SectionHeading";
+
+export const metadata: Metadata = { alternates: { canonical: "/" }, openGraph: { url: "/" } };
 
 const INTRO =
   "At Katha and Kaala, we offer a blend of authentic art pieces, from Jagannath temple art filled with Pattachitra, Tanjore artworks filled with gold in the South, and the endless art form of leelas of Lord Krsna. We focus on building trust with our customers. We strive to offer a diverse range of art and authentic pieces because art is something that isn't used once; it is passed down through generations as a legacy.";
@@ -81,7 +84,7 @@ export default async function HomePage() {
               <div className="relative aspect-[3/2] overflow-hidden bg-shankh-dark">
                 <Image
                   src={p.image}
-                  alt={p.title}
+                  alt={productAltText(p)}
                   fill
                   priority={i === 0}
                   sizes="(min-width:768px) 31vw, 92vw"

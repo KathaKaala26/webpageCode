@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { CatalogProduct } from "@/lib/pricing";
-import { titleWithoutCode } from "@/lib/products";
+import { productAltText, titleWithoutCode } from "@/lib/products";
 import { formatMoney } from "@/lib/format";
 import AddToCartButton from "./AddToCartButton";
 
@@ -25,7 +25,7 @@ export default function ProductCard({
     <>
       <Image
         src={product.image}
-        alt={product.title}
+        alt={productAltText(product)}
         fill
         priority={priority}
         sizes="(min-width:1024px) 30vw, (min-width:640px) 45vw, 92vw"
