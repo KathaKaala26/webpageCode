@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getDbAsync } from "@/lib/prisma";
 import { getStripe, siteUrl } from "@/lib/stripe";
 import { CheckoutError, newOrderNumber, orderData, parseCustomer, priceItems } from "@/lib/orders";
 import { commerce } from "@/lib/site";
@@ -17,6 +17,11 @@ export async function POST(req: Request) {
   }
 
   try {
+    // One request-scoped Postgres client for every DB call below — pricing.ts's own lookups
+    // (inside priceItems()) use a separately-cached Hyperdrive connection, and opening a
+    // second one here for order writes was hanging the Worker (two Hyperdrive connections
+    // from the same isolate within one request appears to deadlock).
+    const db = await getDbAsync();
     const method = body.paymentMethod === "COD" ? "COD" : "STRIPE";
     const customer = parseCustomer(body.customer);
     if (method === "COD" && !(commerce.codCountries as readonly string[]).includes(customer.country)) {
@@ -26,7 +31,7 @@ export async function POST(req: Request) {
 
     // ── Cash on delivery: record the order and we're done ─────────────
     if (method === "COD") {
-      const order = await prisma.order.create({
+      const order = await db.order.create({
         data: { ...orderData(customer, priced), orderNumber: newOrderNumber(), paymentMethod: "COD", status: "COD_PENDING" },
       });
       return NextResponse.json({ orderId: order.id, orderNumber: order.orderNumber });
@@ -38,7 +43,7 @@ export async function POST(req: Request) {
     // the actual Stripe charge always match exactly.
     const isGBP = customer.country === "GB";
     const chargeCurrency = isGBP ? "gbp" : commerce.currency;
-    const rate = isGBP ? await getUsdToGbpRate() : 1;
+    const rate = isGBP ? await getUsdToGbpRate(db) : 1;
 
     const chargedLines = priced.lines.map((l) => {
       const unitCents = isGBP ? Math.round(l.unitPriceCents * rate) : l.unitPriceCents;
@@ -48,7 +53,7 @@ export async function POST(req: Request) {
     const shippingCents = isGBP ? Math.round(priced.shippingCents * rate) : priced.shippingCents;
     const chargedPriced = { lines: chargedLines, subtotalCents, shippingCents, codFeeCents: 0, totalCents: subtotalCents + shippingCents };
 
-    const order = await prisma.order.create({
+    const order = await db.order.create({
       data: { ...orderData(customer, chargedPriced), currency: chargeCurrency, orderNumber: newOrderNumber(), paymentMethod: "STRIPE", status: "PENDING_PAYMENT" },
     });
 
@@ -92,7 +97,7 @@ export async function POST(req: Request) {
       cancel_url: `${base}/checkout?cancelled=1`,
     });
 
-    await prisma.order.update({ where: { id: order.id }, data: { stripeSessionId: session.id } });
+    await db.order.update({ where: { id: order.id }, data: { stripeSessionId: session.id } });
 
     return NextResponse.json({ url: session.url });
   } catch (err) {
