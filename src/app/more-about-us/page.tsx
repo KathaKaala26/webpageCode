@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { WIX } from "@/lib/products";
 import { siteVideo } from "@/lib/pricing";
+import { breadcrumbJsonLd, faqJsonLd } from "@/lib/seo";
 import SectionHeading from "@/components/SectionHeading";
 import ProductVideoPlayer from "@/components/ProductVideoPlayer";
 
@@ -14,10 +15,44 @@ export const metadata: Metadata = {
   openGraph: { url: "/more-about-us" },
 };
 
+const breadcrumbs = breadcrumbJsonLd([
+  { name: "Home", path: "/" },
+  { name: "More About Us", path: "/more-about-us" },
+]);
+
+const faqs = faqJsonLd([
+  {
+    question: "What is Pattachitra art?",
+    answer:
+      "Pattachitra is a traditional Indian folk art form from Odisha. The name combines the Sanskrit words \"patta\" (cloth or canvas) and \"chitra\" (picture), and the style is known for intricate details, bold outlines and vivid natural pigments depicting Hindu deities, mythology and scenes from the Ramayana and Mahabharata.",
+  },
+  {
+    question: "What is the difference between cloth and palm leaf Pattachitra?",
+    answer:
+      "Cloth Pattachitra is painted on specially prepared, chalk-coated cotton canvas. Palm leaf Pattachitra (also called Tala Patra Chitra) is a related but distinct Odisha art form where the design is etched or painted onto dried palm leaves, which are then stitched together — a painstaking process that can take weeks per piece and produces a one-of-a-kind artwork every time.",
+  },
+  {
+    question: "Is the Indian art sold by Katha & Kaala authentic and handmade?",
+    answer:
+      "Yes — every Pattachitra and palm-leaf piece we sell is sourced directly from artisans and Chitrakars in Odisha, India, handcrafted using traditional techniques passed down through generations.",
+  },
+  {
+    question: "Where can I buy authentic Indian art online?",
+    answer:
+      "You can buy authentic Pattachitra paintings, palm-leaf art and other traditional Indian art directly from our online shop at kathakaala.com/shop. Every order ships from our collection in Minnesota, USA.",
+  },
+  {
+    question: "Does Katha & Kaala ship Indian art outside the USA?",
+    answer: "Yes — we ship Pattachitra and palm-leaf artwork to the USA, Canada and the United Kingdom.",
+  },
+]);
+
 export default async function MoreAboutUsPage() {
   const video = await siteVideo();
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqs) }} />
       <section className="bg-white">
         <div className="container-kk grid items-center gap-10 py-16 sm:py-24 lg:grid-cols-2 lg:gap-16">
           <div>
@@ -67,6 +102,42 @@ export default async function MoreAboutUsPage() {
               </Link>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="container-kk py-16 sm:py-24">
+        <SectionHeading title="Palm Leaf Pattachitra: A Living Tradition" />
+        <div className="mt-12 grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+          <p className="leading-relaxed text-ink-soft">
+            Alongside cloth Pattachitra, we offer palm leaf art (Tala Patra Chitra) — a closely related but distinct Odisha
+            tradition where the artwork is etched or painted directly onto dried palm leaves rather than canvas. Creating a
+            single piece can take weeks: the leaves are carefully dried, treated, and stitched together before the Chitrakar
+            begins the painstaking work of etching fine lines and filling them with natural pigment. Because every leaf dries
+            and ages uniquely, no two palm leaf paintings are ever truly identical, making each one a genuine one-of-a-kind
+            piece of handmade Indian art.
+          </p>
+          <div className="relative aspect-[679/434] overflow-hidden rounded-3xl shadow-card">
+            <Image src={WIX + "62a063_64006ddcb44a47fe9427bbf8ff67a794~mv2.jpg"} alt="Palm leaf Pattachitra art" fill sizes="(min-width:1024px) 45vw, 92vw" className="object-cover" />
+          </div>
+        </div>
+        <div className="mt-8 text-center">
+          <Link href="/shop?category=Palm%20Leaf%20Pattachitra" className="btn-primary">
+            Shop palm leaf art
+          </Link>
+        </div>
+      </section>
+
+      <section className="bg-haldi-pale/60 py-16 sm:py-24">
+        <div className="container-kk">
+          <SectionHeading title="Frequently Asked Questions" />
+          <dl className="prose-kk mx-auto mt-10 max-w-3xl divide-y divide-ink/10">
+            {faqs.mainEntity.map((f) => (
+              <div key={f.name} className="py-5">
+                <dt className="text-lg font-semibold text-maroon">{f.name}</dt>
+                <dd className="mt-2 text-ink-soft">{f.acceptedAnswer.text}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
       </section>
 
