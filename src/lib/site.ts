@@ -11,7 +11,7 @@ export const site = {
   location: {
     address: "Minneapolis, MN, USA",
     hours: "",
-    phone: "(817) 666-5006",
+    phone: "",
     email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || "",
   } as { address: string; hours: string; phone: string; email: string },
   whatsapp: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "",
