@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { CatalogProduct } from "@/lib/pricing";
+import { displayedPriceCents } from "@/lib/pricing";
 import { productAltText, titleWithoutCode } from "@/lib/products";
 import { formatMoney } from "@/lib/format";
 import AddToCartButton from "./AddToCartButton";
@@ -19,7 +20,7 @@ export default function ProductCard({
   linked?: boolean;
 }) {
   const hasSizes = product.kind === "ART_FRAME" && product.sizes.length > 0;
-  const fromPriceCents = hasSizes ? Math.min(...product.sizes.map((s) => s.priceCents)) : product.priceCents;
+  const fromPriceCents = displayedPriceCents(product);
   const displayTitle = showCode ? product.title : titleWithoutCode(product.title);
   const imageContent = (
     <>

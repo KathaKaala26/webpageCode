@@ -225,10 +225,21 @@ export async function pricedProduct(slug: string): Promise<CatalogProduct | unde
 export const PRICE_SORT_VALUES = ["price-asc", "price-desc"] as const;
 export type PriceSort = (typeof PRICE_SORT_VALUES)[number];
 
-/** Sorts a product list by price — low-to-high or high-to-low. Unrecognized/absent `sort`
+/** The price actually shown on a product card: the cheapest size for sized ART_FRAME
+ * products (displayed as "From $X"), otherwise the product's own priceCents. */
+export function displayedPriceCents(p: { priceCents: number; kind: ProductKind; sizes: SizeOption[] }): number {
+  return p.kind === "ART_FRAME" && p.sizes.length > 0 ? Math.min(...p.sizes.map((s) => s.priceCents)) : p.priceCents;
+}
+
+/** Sorts a product list by price — low-to-high or high-to-low — using the same price each
+ * product displays (see displayedPriceCents), so a sized product's position matches its
+ * "From $X" card price instead of its unrelated base priceCents. Unrecognized/absent `sort`
  * values are returned unchanged (the catalog's natural order). */
-export function sortByPrice<T extends { priceCents: number }>(list: T[], sort?: string): T[] {
-  if (sort === "price-asc") return [...list].sort((a, b) => a.priceCents - b.priceCents);
-  if (sort === "price-desc") return [...list].sort((a, b) => b.priceCents - a.priceCents);
+export function sortByPrice<T extends { priceCents: number; kind: ProductKind; sizes: SizeOption[] }>(
+  list: T[],
+  sort?: string,
+): T[] {
+  if (sort === "price-asc") return [...list].sort((a, b) => displayedPriceCents(a) - displayedPriceCents(b));
+  if (sort === "price-desc") return [...list].sort((a, b) => displayedPriceCents(b) - displayedPriceCents(a));
   return list;
 }
